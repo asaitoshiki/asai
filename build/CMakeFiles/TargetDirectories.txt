@@ -1,0 +1,3 @@
+/mnt/c/Users/asait/source/repos/MyCppPlugin/build/CMakeFiles/rebuild_cache.dir
+/mnt/c/Users/asait/source/repos/MyCppPlugin/build/CMakeFiles/my_program.dir
+/mnt/c/Users/asait/source/repos/MyCppPlugin/build/CMakeFiles/edit_cache.dir
