@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pinterest OAuth Callback</title>
+</head>
+<body>
+    <h2>OAuth Callback Received</h2>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get("code");
+        if (code) {
+            document.body.innerHTML += "<p>Authorization Code: " + code + "</p>";
+        } else {
+            document.body.innerHTML += "<p>No authorization code found.</p>";
+        }
+    </script>
+</body>
+</html>
