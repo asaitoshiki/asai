@@ -1,0 +1,1 @@
+This application does not collect or store user data. It only retrieves publicly available Pinterest images for fashion recommendations.

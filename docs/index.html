@@ -1,18 +1,45 @@
 <!DOCTYPE html>
-<html>
+
+<html lang="ja">
+
 <head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Pinterest OAuth Callback</title>
+
 </head>
+
 <body>
-    <h2>OAuth Callback Received</h2>
+
+    <h2>Pinterest OAuth 認証</h2>
+
+    <p>このページは Pinterest API の OAuth 認証のコールバックページです。</p>
+
+    
+
     <script>
+
         const params = new URLSearchParams(window.location.search);
+
         const code = params.get("code");
+
+
+
         if (code) {
-            document.body.innerHTML += "<p>Authorization Code: " + code + "</p>";
+
+            document.body.innerHTML += `<p>認証コード: <strong>${code}</strong></p>`;
+
         } else {
-            document.body.innerHTML += "<p>No authorization code found.</p>";
+
+            document.body.innerHTML += "<p>認証コードが見つかりません。</p>";
+
         }
+
     </script>
+
 </body>
+
 </html>
