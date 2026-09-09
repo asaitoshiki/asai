@@ -90,7 +90,7 @@ function drawVisible(p: Probabilities, r: number): Level {
  * 出す材料が無いレベルを、出せるレベルへ寄せる。
  * 日本語が無い区間（英語しか字幕が無い箇所）は L0 にできない。
  */
-function materialize(unit: Unit, level: Level): Level {
+export function materialize(unit: Unit, level: Level): Level {
   if (level === L0 && unit.ja.length === 0) return L1;
   if (level === L1 && unit.en.length === 0) return L0;
   return level;

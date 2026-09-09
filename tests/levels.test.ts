@@ -122,3 +122,13 @@ describe('assignLevels', () => {
     expect(share(L2)).toBeLessThan(0.25);
   });
 });
+
+describe('FALLBACK_STEP', () => {
+  it('一段だけ下げる。日本語まで飛ばさない', async () => {
+    const { FALLBACK_STEP } = await import('../src/core/constants');
+
+    expect(FALLBACK_STEP[L2]).toBe(L1);
+    expect(FALLBACK_STEP[L1]).toBe(L0);
+    expect(FALLBACK_STEP[L0]).toBe(L0);
+  });
+});
