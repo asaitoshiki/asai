@@ -26,6 +26,13 @@ export const OVERLAP_RATIO_MIN = 0.5;
 /** 対応付けのグラフを作るときに辺とみなす最小の重なり秒数。 */
 export const OVERLAP_MIN_SEC = 0.05;
 
+/**
+ * 辺とみなす最小の重なり比率。
+ * 行の境目が数百ミリ秒ずれるだけの薄い重なりで連結成分が数珠つなぎに
+ * 育つのを防ぐため、秒数だけでなく短いほうの尺に対する比率でも締める。
+ */
+export const EDGE_OVERLAP_RATIO_MIN = 0.2;
+
 /** フォールバック時に行頭から何秒手前へ巻き戻すか。 */
 export const FALLBACK_PREROLL_SEC = 0.4;
 
