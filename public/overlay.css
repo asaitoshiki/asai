@@ -1,0 +1,4 @@
+/* 標準字幕は submix が有効なときだけ隠す */
+html[data-submix='on'] .player-timedtext {
+  display: none !important;
+}
