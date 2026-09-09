@@ -11,6 +11,10 @@ onBridgeMessage((message) => {
   }
   if (current?.movieId === message.movieId) return;
 
+  // 先に前のセッションを畳んでから次を組む。標準字幕の表示状態が入れ違わないようにする
+  current?.destroy();
+  current = null;
+
   void Session.start(message.movieId, message.tracks, controller.signal)
     .then((session) => {
       current = session;

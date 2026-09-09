@@ -10,7 +10,7 @@ function isTyping(target: EventTarget | null): boolean {
  * 聞き取れなかったときのキーを1つだけ見張る。
  * Netflix 側のショートカットに食われないよう capture 段階で止める。
  */
-export function onFallbackKey(handler: () => void): void {
+export function onFallbackKey(handler: () => void, signal: AbortSignal): void {
   document.addEventListener(
     'keydown',
     (event: KeyboardEvent) => {
@@ -22,6 +22,6 @@ export function onFallbackKey(handler: () => void): void {
       event.stopPropagation();
       handler();
     },
-    { capture: true }
+    { capture: true, signal }
   );
 }

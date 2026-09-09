@@ -22,8 +22,3 @@ export type BridgeMessage = TracksMessage | TrackErrorMessage;
 export function isBridgeMessage(value: unknown): value is BridgeMessage {
   return typeof value === 'object' && value !== null && (value as BridgeMessage).source === BRIDGE_SOURCE;
 }
-
-/** popup → content script のコマンド。 */
-export type PopupCommand =
-  | { type: 'settings-changed' }
-  | { type: 'remix' };

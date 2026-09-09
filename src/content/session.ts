@@ -19,6 +19,8 @@ export class Session {
   private settings: Settings;
   /** フォールバックで一段下げた行。混ぜ直すと消える。 */
   private readonly overrides = new Map<number, Level>();
+  /** このセッションの購読をまとめて切るための合図。 */
+  private readonly lifetime = new AbortController();
 
   private constructor(
     readonly movieId: string,
@@ -55,6 +57,13 @@ export class Session {
     });
   }
 
+  /** 別の動画に切り替わったときに、描画も購読も止める。 */
+  destroy(): void {
+    this.lifetime.abort();
+    this.overlay.destroy();
+    setNativeSubtitlesHidden(false);
+  }
+
   private run(): void {
     setNativeSubtitlesHidden(this.settings.enabled);
 
@@ -64,13 +73,14 @@ export class Session {
       this.levels = this.mix();
       if (remixed) this.overrides.clear();
       setNativeSubtitlesHidden(settings.enabled);
-    });
+    }, this.lifetime.signal);
 
     onFallbackKey(() => {
       void this.fallback();
-    });
+    }, this.lifetime.signal);
 
     const tick = (): void => {
+      if (this.lifetime.signal.aborted) return;
       this.draw();
       requestAnimationFrame(tick);
     };

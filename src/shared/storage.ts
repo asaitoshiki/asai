@@ -56,11 +56,16 @@ export async function clearFallbacks(): Promise<void> {
 }
 
 /** 設定が他のタブやポップアップから変わったときに知らせる。 */
-export function onSettingsChanged(handler: (settings: Settings) => void): void {
-  chrome.storage.onChanged.addListener((changes, area) => {
+export function onSettingsChanged(handler: (settings: Settings) => void, signal: AbortSignal): void {
+  const listener = (changes: Record<string, chrome.storage.StorageChange>, area: string): void => {
     if (area !== 'local') return;
     const change = changes[SETTINGS_KEY];
     if (!change) return;
     handler({ ...DEFAULT_SETTINGS, ...(change.newValue as Partial<Settings> | undefined) });
+  };
+
+  chrome.storage.onChanged.addListener(listener);
+  signal.addEventListener('abort', () => {
+    chrome.storage.onChanged.removeListener(listener);
   });
 }
