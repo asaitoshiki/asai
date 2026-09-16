@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+/* テーマ切り替えは data-theme 属性で行う（OS 設定に追従する auto は JS 側で解決） */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --c-bg: #fff7fb;
+  --c-surface: #ffffff;
+  --c-surface-2: #fdeef6;
+  --c-fg: #2b1b26;
+  --c-muted: #8a7280;
+  --c-line: #f4dced;
+  --c-accent: #ec4899;
+  --c-accent-fg: #ffffff;
+  --c-accent-soft: #fce7f3;
+  --c-chart: #ec4899;
+  --c-chart-track: #f6e6ef;
+  --c-shadow: 0 1px 2px rgb(43 27 38 / 0.06), 0 8px 24px -12px rgb(236 72 153 / 0.25);
+}
+
+[data-theme="dark"] {
+  --c-bg: #141017;
+  --c-surface: #201a22;
+  --c-surface-2: #2a2130;
+  --c-fg: #f6eaf3;
+  --c-muted: #a8939f;
+  --c-line: #382c3d;
+  --c-accent: #f472b6;
+  --c-accent-fg: #1d1118;
+  --c-accent-soft: #3a2334;
+  --c-chart: #e05a97;
+  --c-chart-track: #332a37;
+  --c-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+}
+
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-surface-2: var(--c-surface-2);
+  --color-fg: var(--c-fg);
+  --color-muted: var(--c-muted);
+  --color-line: var(--c-line);
+  --color-accent: var(--c-accent);
+  --color-accent-fg: var(--c-accent-fg);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-chart: var(--c-chart);
+  --color-chart-track: var(--c-chart-track);
+  --font-sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui,
+    -apple-system, "Segoe UI", sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font-family: var(--font-sans);
+    overscroll-behavior-y: none;
+  }
+
+  /* iOS のフォーム要素が勝手にズームしないよう 16px を下回らせない */
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    font-size: max(1rem, 16px);
+    color: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+}
+
+@utility card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: 1rem;
+  box-shadow: var(--c-shadow);
+}
+
+@utility safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@utility safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@utility animate-sheet {
+  animation: sheet-in 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@utility animate-fade {
+  animation: fade-in 0.18s ease-out;
+}
