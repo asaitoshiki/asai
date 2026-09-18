@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { Button, Card, EmptyState, SectionTitle } from '../components/ui'
+import { Icon } from '../components/Icon'
+import { Button, EmptyState, Numeral, SectionTitle } from '../components/ui'
 import { summarizeGame } from '../domain/stats'
 import { useAppStore } from '../store/useAppStore'
 
@@ -10,83 +11,102 @@ export const HomePage = () => {
   const recent = games
     .filter((game) => game.finishedAt !== null)
     .sort((a, b) => b.finishedAt! - a.finishedAt!)
-    .slice(0, 3)
+    .slice(0, 4)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <header>
-        <p className="text-sm font-bold text-amber-400">MÖLKKY NOTE</p>
-        <h1 className="text-2xl font-bold">モルックノート</h1>
+        <p className="eyebrow">MÖLKKY</p>
+        <h1 className="mt-1 font-serif text-3xl leading-tight">モルックノート</h1>
+        <p className="mt-2 text-[13px] text-muted">スコアと戦績を、その場で残す。</p>
       </header>
 
-      <Button className="w-full py-4 text-lg" onClick={() => navigate('/games/new')}>
-        新しい試合をはじめる
+      <Button className="flex w-full items-center justify-center gap-2 py-4" onClick={() => navigate('/games/new')}>
+        <Icon name="plus" size={18} />
+        新しい試合
       </Button>
 
       {ongoing.length > 0 && (
         <section>
-          <SectionTitle>進行中の試合</SectionTitle>
-          <div className="space-y-2">
+          <SectionTitle>進行中</SectionTitle>
+          <ul className="divide-y divide-rule border-y border-rule">
             {ongoing.map((game) => (
-              <Link key={game.id} to={`/games/${game.id}`} className="block">
-                <Card className="flex items-center justify-between">
-                  <div>
-                    <p className="font-bold">{game.entries.map((entry) => entry.name).join(' vs ')}</p>
-                    <p className="text-xs text-slate-400">{game.throws.length} 投目まで記録済み</p>
-                  </div>
-                  <span className="text-amber-400">再開 ▸</span>
-                </Card>
-              </Link>
+              <li key={game.id}>
+                <Link to={`/games/${game.id}`} className="flex items-center justify-between py-3.5">
+                  <span>
+                    <span className="block text-[15px]">
+                      {game.entries.map((entry) => entry.name).join(' 対 ')}
+                    </span>
+                    <span className="tabular block text-[12px] text-muted">
+                      {game.throws.length} 投まで記録
+                    </span>
+                  </span>
+                  <span className="text-accent">
+                    <Icon name="arrowRight" size={18} />
+                  </span>
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
       )}
 
       <section>
-        <div className="flex items-baseline justify-between">
-          <SectionTitle>最近の試合</SectionTitle>
-          <Link to="/history" className="mb-2 text-xs font-bold text-amber-400">
-            すべて見る
+        <div className="mb-3 flex items-baseline justify-between border-t border-rule pt-3">
+          <h2 className="eyebrow">最近の試合</h2>
+          <Link to="/history" className="eyebrow text-accent">
+            すべて
           </Link>
         </div>
         {recent.length === 0 ? (
-          <EmptyState>まだ試合の記録がありません</EmptyState>
+          <EmptyState>まだ記録がありません</EmptyState>
         ) : (
-          <div className="space-y-2">
+          <ul className="divide-y divide-rule border-y border-rule">
             {recent.map((game) => {
               const summary = summarizeGame(game)
               return (
-                <Card key={game.id} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-bold">🏅 {summary.winnerName ?? '勝者なし'}</p>
-                    <p className="tabular text-xs text-slate-400">
-                      {summary.lines.map((line) => `${line.name} ${line.score}`).join(' / ')}
-                    </p>
-                  </div>
-                  <time className="text-xs text-slate-500">
-                    {new Date(game.finishedAt!).toLocaleDateString('ja-JP')}
+                <li key={game.id} className="flex items-center justify-between py-3.5">
+                  <span>
+                    <span className="block text-[15px]">{summary.winnerName ?? '勝者なし'}</span>
+                    <span className="tabular block text-[12px] text-muted">
+                      {summary.lines.map((line) => `${line.name} ${line.score}`).join('　')}
+                    </span>
+                  </span>
+                  <time className="tabular text-[12px] text-faint">
+                    {new Date(game.finishedAt!).toLocaleDateString('ja-JP', {
+                      month: 'numeric',
+                      day: 'numeric',
+                    })}
                   </time>
-                </Card>
+                </li>
               )
             })}
-          </div>
+          </ul>
         )}
       </section>
 
       <section className="grid grid-cols-2 gap-3">
-        <Link to="/practice">
-          <Card className="h-full text-center">
-            <p className="text-2xl">🎽</p>
-            <p className="mt-1 text-sm font-bold">的当て練習</p>
-          </Card>
-        </Link>
-        <Link to="/rules">
-          <Card className="h-full text-center">
-            <p className="text-2xl">📖</p>
-            <p className="mt-1 text-sm font-bold">ルールを見る</p>
-          </Card>
-        </Link>
+        {[
+          { to: '/practice', label: '的当て練習', note: '狙いの精度を測る', icon: 'target' },
+          { to: '/rules', label: 'ルール', note: '投げ方から得点まで', icon: 'book' },
+        ].map((item) => (
+          <Link
+            key={item.to}
+            to={item.to}
+            className="rounded border border-rule bg-surface px-4 py-4 text-ink"
+          >
+            <span className="text-accent">
+              <Icon name={item.icon as 'target'} size={20} />
+            </span>
+            <span className="mt-2 block text-[14px]">{item.label}</span>
+            <span className="block text-[11px] text-muted">{item.note}</span>
+          </Link>
+        ))}
       </section>
+
+      <p className="text-[11px] text-faint">
+        <Numeral>50</Numeral> 点ちょうどで勝ち。超えたら <Numeral>25</Numeral> 点に戻る。
+      </p>
     </div>
   )
 }

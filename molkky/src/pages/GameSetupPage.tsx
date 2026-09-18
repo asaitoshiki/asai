@@ -6,6 +6,12 @@ import { buildEntries, emptyConfig, isPlayable } from '../domain/entryConfig'
 import { DEFAULT_RULES } from '../domain/rules'
 import { useAppStore } from '../store/useAppStore'
 
+const RULE_FIELDS = [
+  ['targetScore', '目標点'],
+  ['penaltyScore', '超過したとき戻る点'],
+  ['maxMisses', '失格になる連続ミス数'],
+] as const
+
 export const GameSetupPage = () => {
   const navigate = useNavigate()
   const members = useAppStore((state) => state.members)
@@ -18,26 +24,23 @@ export const GameSetupPage = () => {
   const ready = isPlayable(entries)
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-xl font-bold">試合の設定</h1>
+    <div className="space-y-7">
+      <header>
+        <p className="eyebrow">NEW GAME</p>
+        <h1 className="mt-1 font-serif text-2xl">試合の設定</h1>
+      </header>
 
       <EntryBuilder config={config} onChange={setConfig} />
 
-      <details className="rounded-2xl border border-slate-800 p-4">
-        <summary className="cursor-pointer text-sm font-bold text-slate-400">詳細ルール設定</summary>
-        <div className="mt-3 space-y-3">
-          {(
-            [
-              ['targetScore', '目標点'],
-              ['penaltyScore', '超過時に戻る点'],
-              ['maxMisses', '失格になる連続ミス数'],
-            ] as const
-          ).map(([key, label]) => (
-            <label key={key} className="flex items-center justify-between gap-3 text-sm">
+      <details className="border-t border-rule pt-3">
+        <summary className="eyebrow cursor-pointer">ルールを変える</summary>
+        <div className="mt-4 space-y-3">
+          {RULE_FIELDS.map(([key, label]) => (
+            <label key={key} className="flex items-center justify-between gap-3 text-[14px]">
               {label}
               <TextInput
                 type="number"
-                className="w-24 text-right"
+                className="tabular w-20 text-right"
                 value={rules[key]}
                 onChange={(event) =>
                   setRules((current) => ({ ...current, [key]: Number(event.target.value) }))
@@ -49,11 +52,11 @@ export const GameSetupPage = () => {
       </details>
 
       <Button
-        className="w-full py-4 text-lg"
+        className="w-full py-4"
         disabled={!ready}
         onClick={() => navigate(`/games/${createGame(entries, rules, null)}`)}
       >
-        {ready ? '試合開始' : '2 組以上になるよう選んでください'}
+        {ready ? '試合をはじめる' : '2 組以上そろうと開始できます'}
       </Button>
     </div>
   )

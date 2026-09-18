@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Card, EmptyState, TextInput } from '../components/ui'
+import { Button, EmptyState, Numeral, TextInput } from '../components/ui'
 import { computeMemberStats } from '../domain/stats'
 import { useAppStore } from '../store/useAppStore'
 
@@ -22,8 +22,11 @@ export const MembersPage = () => {
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold">メンバー</h1>
+    <div className="space-y-6">
+      <header>
+        <p className="eyebrow">MEMBERS</p>
+        <h1 className="mt-1 font-serif text-2xl">メンバー</h1>
+      </header>
 
       <div className="flex gap-2">
         <TextInput
@@ -32,17 +35,19 @@ export const MembersPage = () => {
           onChange={(event) => setName(event.target.value)}
           onKeyDown={(event) => event.key === 'Enter' && add()}
         />
-        <Button onClick={add}>追加</Button>
+        <Button className="shrink-0 px-4 py-2.5" onClick={add}>
+          追加
+        </Button>
       </div>
 
       {members.length === 0 ? (
-        <EmptyState>よく遊ぶメンバーを登録しておくと試合の準備が早くなります</EmptyState>
+        <EmptyState>よく遊ぶ人を登録しておくと、試合の準備が早くなります</EmptyState>
       ) : (
-        <div className="space-y-2">
+        <ul className="divide-y divide-rule border-y border-rule">
           {members.map((member) => {
             const stat = stats.get(member.id)!
             return (
-              <Card key={member.id} className="flex items-center gap-3">
+              <li key={member.id} className="flex items-center gap-3 py-3">
                 {editing === member.id ? (
                   <TextInput
                     autoFocus
@@ -55,25 +60,26 @@ export const MembersPage = () => {
                   />
                 ) : (
                   <button className="flex-1 text-left" onClick={() => setEditing(member.id)}>
-                    <p className="font-bold">{member.name}</p>
-                    <p className="tabular text-xs text-slate-400">
-                      {stat.games} 試合 / {stat.wins} 勝 / 勝率{' '}
-                      {(stat.winRate * 100).toFixed(0)}%
-                    </p>
+                    <span className="block text-[15px]">{member.name}</span>
+                    <span className="tabular block text-[12px] text-muted">
+                      {stat.games} 試合　{stat.wins} 勝　勝率{' '}
+                      <Numeral>{(stat.winRate * 100).toFixed(0)}</Numeral>%
+                    </span>
                   </button>
                 )}
                 <Button
-                  variant="danger"
-                  className="px-3 py-2 text-sm"
+                  variant="quiet"
+                  className="px-2 py-1 text-[12px] text-alert"
                   onClick={() => removeMember(member.id)}
                 >
                   削除
                 </Button>
-              </Card>
+              </li>
             )
           })}
-        </div>
+        </ul>
       )}
+      <p className="text-[11px] text-faint">名前をタップすると変更できます。</p>
     </div>
   )
 }

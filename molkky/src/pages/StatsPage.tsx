@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, EmptyState, SectionTitle } from '../components/ui'
+import { EmptyState, Numeral } from '../components/ui'
 import { PinHitChart } from '../components/PinHitChart'
 import { computeMemberStats } from '../domain/stats'
 import { useAppStore } from '../store/useAppStore'
@@ -16,54 +16,54 @@ export const StatsPage = () => {
     .sort((a, b) => b.winRate - a.winRate || b.games - a.games)
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold">戦績</h1>
+    <div className="space-y-6">
+      <header>
+        <p className="eyebrow">RECORDS</p>
+        <h1 className="mt-1 font-serif text-2xl">戦績</h1>
+      </header>
 
       {stats.length === 0 ? (
-        <EmptyState>試合を 1 つ終えると成績が集計されます</EmptyState>
+        <EmptyState>試合を 1 つ終えると集計されます</EmptyState>
       ) : (
-        <>
-          <SectionTitle>勝率ランキング</SectionTitle>
+        <ul className="divide-y divide-rule border-y border-rule">
           {stats.map((stat, rank) => {
             const open = openId === stat.member.id
             return (
-              <Card key={stat.member.id}>
+              <li key={stat.member.id} className="py-3.5">
                 <button
-                  className="flex w-full items-center justify-between text-left"
+                  className="flex w-full items-baseline justify-between gap-3 text-left"
                   onClick={() => setOpenId(open ? null : stat.member.id)}
                 >
-                  <span className="flex items-baseline gap-2">
-                    <span className="tabular w-6 text-sm text-slate-500">{rank + 1}.</span>
-                    <span className="font-bold">{stat.member.name}</span>
+                  <span className="flex min-w-0 items-baseline gap-3">
+                    <Numeral className="w-5 shrink-0 text-[13px] text-faint">{rank + 1}</Numeral>
+                    <span className="truncate text-[15px]">{stat.member.name}</span>
                   </span>
-                  <span className="tabular text-sm text-slate-400">
-                    {stat.wins}勝 / {stat.games}試合{' '}
-                    <span className="text-lg font-bold text-amber-400">
-                      {percent(stat.winRate)}
+                  <span className="shrink-0 text-[12px] text-muted">
+                    <span className="tabular">
+                      {stat.wins} 勝 / {stat.games} 試合
                     </span>
+                    <Numeral className="ml-3 text-xl text-ink">{percent(stat.winRate)}</Numeral>
                   </span>
                 </button>
 
                 {open && (
-                  <div className="mt-4 space-y-4 border-t border-slate-800 pt-4">
-                    <dl className="grid grid-cols-3 gap-2 text-center">
+                  <div className="mt-4 space-y-6">
+                    <dl className="grid grid-cols-3 gap-x-4 gap-y-4">
                       {(
                         [
                           ['総投数', `${stat.throws}`, '投'],
                           ['平均得点', stat.averagePoints.toFixed(1), '点/投'],
                           ['ミス率', percent(stat.missRate), ''],
                           ['1 本倒し', `${stat.singleHits}`, '回'],
-                          ['複数本倒し', `${stat.multiHits}`, '回'],
+                          ['複数本', `${stat.multiHits}`, '回'],
                           ['50 点超過', `${stat.overshoots}`, '回'],
                         ] as const
                       ).map(([label, value, unit]) => (
-                        <div key={label} className="rounded-xl bg-slate-950/60 py-2">
-                          <dt className="text-[11px] text-slate-400">{label}</dt>
-                          <dd className="tabular text-lg font-bold">
-                            {value}
-                            <span className="ml-0.5 text-[11px] font-normal text-slate-400">
-                              {unit}
-                            </span>
+                        <div key={label}>
+                          <dt className="text-[11px] text-muted">{label}</dt>
+                          <dd>
+                            <Numeral className="text-xl">{value}</Numeral>
+                            <span className="ml-1 text-[11px] text-muted">{unit}</span>
                           </dd>
                         </div>
                       ))}
@@ -71,10 +71,10 @@ export const StatsPage = () => {
                     <PinHitChart hits={stat.pinHits} />
                   </div>
                 )}
-              </Card>
+              </li>
             )
           })}
-        </>
+        </ul>
       )}
     </div>
   )

@@ -8,8 +8,8 @@ import type { TournamentFormat } from '../domain/types'
 import { useAppStore } from '../store/useAppStore'
 
 const FORMATS: { value: TournamentFormat; label: string; note: string }[] = [
-  { value: 'roundRobin', label: '総当たり', note: '全員と 1 回ずつ対戦して順位表を作る' },
-  { value: 'knockout', label: 'トーナメント', note: '勝ち上がり式。人数が半端な枠は不戦勝' },
+  { value: 'roundRobin', label: '総当たり', note: '全員と 1 回ずつ対戦し、順位表で決める' },
+  { value: 'knockout', label: 'トーナメント', note: '勝ち上がり式。半端な枠は不戦勝になる' },
 ]
 
 export const TournamentSetupPage = () => {
@@ -24,37 +24,40 @@ export const TournamentSetupPage = () => {
   const entries = buildEntries(config, members)
   const ready = isPlayable(entries) && name.trim() !== ''
 
-  const create = () =>
-    navigate(`/tournaments/${createTournament(name, format, entries, DEFAULT_RULES)}`)
-
   return (
-    <div className="space-y-6">
-      <h1 className="text-xl font-bold">大会をつくる</h1>
+    <div className="space-y-7">
+      <header>
+        <p className="eyebrow">NEW TOURNAMENT</p>
+        <h1 className="mt-1 font-serif text-2xl">大会をつくる</h1>
+      </header>
 
       <section>
         <SectionTitle>大会名</SectionTitle>
         <TextInput
           value={name}
-          placeholder="例：春の社内モルック大会"
+          placeholder="春の社内モルック大会"
           onChange={(event) => setName(event.target.value)}
         />
       </section>
 
       <section>
         <SectionTitle>方式</SectionTitle>
-        <div className="space-y-2">
+        <div className="divide-y divide-rule border-y border-rule">
           {FORMATS.map((item) => (
             <button
               key={item.value}
-              className={`w-full rounded-2xl border p-4 text-left ${
-                format === item.value
-                  ? 'border-amber-500 bg-amber-500/10'
-                  : 'border-slate-800 bg-slate-900/70'
-              }`}
+              className="flex w-full items-center gap-3 py-3.5 text-left"
               onClick={() => setFormat(item.value)}
             >
-              <p className="font-bold">{item.label}</p>
-              <p className="text-xs text-slate-400">{item.note}</p>
+              <span
+                className={`h-4 w-4 shrink-0 rounded-full border ${
+                  format === item.value ? 'border-accent bg-accent' : 'border-rule'
+                }`}
+              />
+              <span>
+                <span className="block text-[15px]">{item.label}</span>
+                <span className="block text-[12px] text-muted">{item.note}</span>
+              </span>
             </button>
           ))}
         </div>
@@ -62,7 +65,7 @@ export const TournamentSetupPage = () => {
 
       <EntryBuilder config={config} onChange={setConfig} maxTeams={8} />
 
-      <Button className="w-full py-4 text-lg" disabled={!ready} onClick={create}>
+      <Button className="w-full py-4" disabled={!ready} onClick={() => navigate(`/tournaments/${createTournament(name, format, entries, DEFAULT_RULES)}`)}>
         {ready ? '対戦表をつくる' : '大会名と 2 組以上の参加者が必要です'}
       </Button>
     </div>

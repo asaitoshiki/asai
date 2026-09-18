@@ -1,4 +1,4 @@
-import { Button, Card, EmptyState } from '../components/ui'
+import { Button, EmptyState, Numeral } from '../components/ui'
 import { summarizeGame } from '../domain/stats'
 import { useAppStore } from '../store/useAppStore'
 
@@ -8,48 +8,62 @@ export const HistoryPage = () => {
   const sorted = [...games].sort((a, b) => b.createdAt - a.createdAt)
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold">試合履歴</h1>
+    <div className="space-y-6">
+      <header>
+        <p className="eyebrow">HISTORY</p>
+        <h1 className="mt-1 font-serif text-2xl">試合履歴</h1>
+      </header>
 
       {sorted.length === 0 ? (
-        <EmptyState>まだ試合の記録がありません</EmptyState>
+        <EmptyState>まだ記録がありません</EmptyState>
       ) : (
-        sorted.map((game) => {
-          const summary = summarizeGame(game)
-          return (
-            <Card key={game.id} className="space-y-2">
-              <div className="flex items-baseline justify-between">
-                <p className="font-bold">
-                  {game.finishedAt === null ? '進行中' : `🏅 ${summary.winnerName ?? '勝者なし'}`}
-                </p>
-                <time className="text-xs text-slate-500">
-                  {new Date(game.createdAt).toLocaleString('ja-JP')}
-                </time>
-              </div>
-              <ul className="space-y-1">
-                {summary.lines.map((line) => (
-                  <li key={line.name} className="flex justify-between text-sm">
-                    <span className={line.eliminated ? 'text-rose-400' : ''}>
-                      {line.name}
-                      {line.eliminated && '（失格）'}
-                    </span>
-                    <span className="tabular font-bold">{line.score}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex justify-between text-xs text-slate-500">
-                <span>{game.throws.length} 投</span>
-                <Button
-                  variant="danger"
-                  className="px-3 py-1 text-xs"
-                  onClick={() => deleteGame(game.id)}
-                >
-                  削除
-                </Button>
-              </div>
-            </Card>
-          )
-        })
+        <ul className="divide-y divide-rule border-y border-rule">
+          {sorted.map((game) => {
+            const summary = summarizeGame(game)
+            return (
+              <li key={game.id} className="py-4">
+                <div className="flex items-baseline justify-between">
+                  <p className="text-[15px]">
+                    {game.finishedAt === null ? (
+                      <span className="text-muted">進行中</span>
+                    ) : (
+                      summary.winnerName ?? '勝者なし'
+                    )}
+                  </p>
+                  <time className="tabular text-[12px] text-faint">
+                    {new Date(game.createdAt).toLocaleString('ja-JP', {
+                      month: 'numeric',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </time>
+                </div>
+                <ul className="mt-2">
+                  {summary.lines.map((line) => (
+                    <li key={line.name} className="flex items-baseline justify-between py-0.5">
+                      <span className={`text-[13px] ${line.eliminated ? 'text-alert' : 'text-muted'}`}>
+                        {line.name}
+                        {line.eliminated && '（失格）'}
+                      </span>
+                      <Numeral className="text-base">{line.score}</Numeral>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="tabular text-[11px] text-faint">{game.throws.length} 投</span>
+                  <Button
+                    variant="quiet"
+                    className="px-2 py-0.5 text-[11px] text-alert"
+                    onClick={() => deleteGame(game.id)}
+                  >
+                    削除
+                  </Button>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
       )}
     </div>
   )

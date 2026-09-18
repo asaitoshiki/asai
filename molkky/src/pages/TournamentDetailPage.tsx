@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { Button, Card, SectionTitle } from '../components/ui'
+import { Icon } from '../components/Icon'
+import { Button, Numeral, SectionTitle } from '../components/ui'
 import { championOf, computeStandings } from '../domain/tournament'
 import type { Tournament, TournamentMatch } from '../domain/types'
 import { useAppStore } from '../store/useAppStore'
@@ -18,9 +19,8 @@ export const TournamentDetailPage = () => {
     entryId === null ? '—' : (tournament.entries.find((entry) => entry.id === entryId)?.name ?? '—')
 
   const openMatch = (match: TournamentMatch) => {
-    const existing = match.gameId
     const gameId =
-      existing ??
+      match.gameId ??
       createGame(
         match.entryIds.map((entryId) => tournament.entries.find((entry) => entry.id === entryId)!),
         tournament.rules,
@@ -33,20 +33,18 @@ export const TournamentDetailPage = () => {
   const rounds = [...new Set(tournament.matches.map((match) => match.round))].sort((a, b) => a - b)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       <header>
-        <h1 className="text-xl font-bold">{tournament.name}</h1>
-        <p className="text-xs text-slate-400">
-          {tournament.format === 'roundRobin' ? '総当たり' : 'トーナメント'}／
-          {tournament.entries.length} 組
-        </p>
+        <p className="eyebrow">{tournament.format === 'roundRobin' ? 'ROUND ROBIN' : 'KNOCKOUT'}</p>
+        <h1 className="mt-1 font-serif text-2xl">{tournament.name}</h1>
+        <p className="tabular mt-1 text-[12px] text-muted">{tournament.entries.length} 組が参加</p>
       </header>
 
       {champion && (
-        <Card className="text-center">
-          <p className="text-4xl">🏆</p>
-          <p className="mt-1 text-lg font-bold text-amber-400">優勝：{champion.name}</p>
-        </Card>
+        <section className="border-y border-accent py-5 text-center">
+          <p className="eyebrow text-accent">CHAMPION</p>
+          <p className="mt-1 font-serif text-2xl">{champion.name}</p>
+        </section>
       )}
 
       {tournament.format === 'roundRobin' && <Standings tournament={tournament} />}
@@ -56,40 +54,45 @@ export const TournamentDetailPage = () => {
           <SectionTitle>
             {tournament.format === 'knockout' ? roundLabel(round, rounds.length) : `第 ${round} 節`}
           </SectionTitle>
-          <div className="space-y-2">
+          <ul className="divide-y divide-rule border-y border-rule">
             {tournament.matches
               .filter((match) => match.round === round)
               .map((match) => {
                 const playable = match.entryIds.every((entryId) => entryId !== null)
                 const decided = match.winnerEntryId !== null
                 return (
-                  <Card key={match.id} className="flex items-center justify-between py-3">
-                    <div>
-                      <p className="font-bold">
-                        {nameOf(match.entryIds[0])} vs {nameOf(match.entryIds[1] ?? null)}
+                  <li key={match.id} className="flex items-center justify-between gap-3 py-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-[14px]">
+                        {nameOf(match.entryIds[0])}
+                        <span className="mx-2 text-faint">対</span>
+                        {nameOf(match.entryIds[1] ?? null)}
                       </p>
                       {decided && (
-                        <p className="text-xs text-amber-400">勝者 {nameOf(match.winnerEntryId)}</p>
+                        <p className="flex items-center gap-1 text-[12px] text-accent">
+                          <Icon name="flag" size={12} />
+                          {nameOf(match.winnerEntryId)}
+                        </p>
                       )}
                     </div>
                     <Button
-                      variant={decided ? 'ghost' : 'primary'}
-                      className="px-3 py-2 text-sm"
+                      variant={decided ? 'quiet' : 'outline'}
+                      className="shrink-0 px-3 py-1.5 text-[12px]"
                       disabled={!playable}
                       onClick={() => openMatch(match)}
                     >
-                      {match.gameId === null ? '試合開始' : decided ? '記録を見る' : '再開'}
+                      {match.gameId === null ? '開始' : decided ? '記録' : '再開'}
                     </Button>
-                  </Card>
+                  </li>
                 )
               })}
-          </div>
+          </ul>
         </section>
       ))}
 
       <Button
-        variant="danger"
-        className="w-full"
+        variant="quiet"
+        className="w-full py-2 text-[12px] text-alert"
         onClick={() => {
           deleteTournament(tournament.id)
           navigate('/tournaments')
@@ -114,33 +117,33 @@ const Standings = ({ tournament }: { tournament: Tournament }) => {
   return (
     <section>
       <SectionTitle>順位表</SectionTitle>
-      <Card className="overflow-x-auto p-0">
-        <table className="tabular w-full text-sm">
-          <thead className="text-xs text-slate-400">
-            <tr className="border-b border-slate-800">
-              <th className="px-3 py-2 text-left font-normal">組</th>
-              <th className="px-2 py-2 text-right font-normal">試合</th>
-              <th className="px-2 py-2 text-right font-normal">勝</th>
-              <th className="px-2 py-2 text-right font-normal">負</th>
-              <th className="px-3 py-2 text-right font-normal">得失点</th>
+      <table className="tabular w-full text-[13px]">
+        <thead>
+          <tr className="border-b border-rule text-[11px] text-muted">
+            <th className="py-2 text-left font-normal">組</th>
+            <th className="py-2 pl-2 text-right font-normal">試合</th>
+            <th className="py-2 pl-2 text-right font-normal">勝</th>
+            <th className="py-2 pl-2 text-right font-normal">負</th>
+            <th className="py-2 pl-3 text-right font-normal">得失点</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-rule">
+          {standings.map((standing) => (
+            <tr key={standing.entry.id}>
+              <td className="py-2.5">{standing.entry.name}</td>
+              <td className="py-2.5 pl-2 text-right text-muted">{standing.played}</td>
+              <td className="py-2.5 pl-2 text-right">
+                <Numeral className="text-base">{standing.wins}</Numeral>
+              </td>
+              <td className="py-2.5 pl-2 text-right text-muted">{standing.losses}</td>
+              <td className="py-2.5 pl-3 text-right text-muted">
+                {standing.pointsFor - standing.pointsAgainst > 0 ? '+' : ''}
+                {standing.pointsFor - standing.pointsAgainst}
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {standings.map((standing) => (
-              <tr key={standing.entry.id} className="border-b border-slate-800/50 last:border-0">
-                <td className="px-3 py-2 font-bold">{standing.entry.name}</td>
-                <td className="px-2 py-2 text-right">{standing.played}</td>
-                <td className="px-2 py-2 text-right font-bold text-amber-400">{standing.wins}</td>
-                <td className="px-2 py-2 text-right">{standing.losses}</td>
-                <td className="px-3 py-2 text-right">
-                  {standing.pointsFor - standing.pointsAgainst > 0 ? '+' : ''}
-                  {standing.pointsFor - standing.pointsAgainst}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
+          ))}
+        </tbody>
+      </table>
     </section>
   )
 }

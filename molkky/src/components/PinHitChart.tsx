@@ -9,20 +9,20 @@ export const PinHitChart = ({ hits }: { hits: number[] }) => {
 
   return (
     <figure className="m-0">
-      <figcaption className="mb-4 text-xs text-slate-400">よく倒すスキットル（本数）</figcaption>
-      <div className="flex h-24 items-end gap-[2px]">
+      <figcaption className="eyebrow mb-5">よく倒すスキットル</figcaption>
+      <div className="flex h-20 items-end gap-[3px] border-b border-rule">
         {PIN_NUMBERS.map((pin, index) => {
           const value = hits[index]
           const tallest = value === max && value > 0
           return (
             <div
               key={pin}
-              title={`${pin} 番：${value} 本`}
-              className="relative flex-1 rounded-t bg-amber-500"
-              style={{ height: `${Math.max((value / max) * 100, 2)}%` }}
+              title={`${pin} 番　${value} 本`}
+              className="relative flex-1 bg-accent"
+              style={{ height: `${Math.max((value / max) * 100, 1.5)}%` }}
             >
               {tallest && (
-                <span className="tabular absolute inset-x-0 -top-4 text-center text-[10px] text-slate-300">
+                <span className="tabular absolute inset-x-0 -top-5 text-center font-serif text-[12px]">
                   {value}
                 </span>
               )}
@@ -30,9 +30,9 @@ export const PinHitChart = ({ hits }: { hits: number[] }) => {
           )
         })}
       </div>
-      <div className="mt-1 flex gap-[2px]">
+      <div className="mt-1.5 flex gap-[3px]">
         {PIN_NUMBERS.map((pin) => (
-          <span key={pin} className="tabular flex-1 text-center text-[10px] text-slate-500">
+          <span key={pin} className="tabular flex-1 text-center text-[10px] text-faint">
             {pin}
           </span>
         ))}

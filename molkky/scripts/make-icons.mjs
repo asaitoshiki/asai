@@ -2,9 +2,9 @@
 import { deflateSync } from 'node:zlib'
 import { writeFileSync } from 'node:fs'
 
-const BG = [15, 23, 42]
-const PIN = [248, 250, 252]
-const STICK = [245, 158, 11]
+const BG = [29, 82, 64]
+const PIN = [243, 244, 241]
+const STICK = [243, 244, 241]
 
 const chunk = (type, data) => {
   const length = Buffer.alloc(4)
@@ -45,9 +45,12 @@ const render = (size) => {
       const pinIndex = [30, 48, 66].findIndex((left) =>
         inRoundRect(x, y, left * unit, 38 * unit, 13 * unit, 40 * unit, 6 * unit),
       )
-      const onStick =
-        Math.abs(y - (x * -0.45 + 46 * unit)) < 4.5 * unit && x > 12 * unit && x < 74 * unit
-      const color = onStick ? STICK : pinIndex >= 0 ? PIN : BG
+      // 棒はスキットルと同色なので、まわりに地色の縁を残して重なりを見せる
+      const distanceToStick = Math.abs(y - (x * -0.45 + 46 * unit))
+      const withinStickSpan = x > 12 * unit && x < 74 * unit
+      const onStick = distanceToStick < 4 * unit && withinStickSpan
+      const onStickEdge = distanceToStick < 6.5 * unit && withinStickSpan
+      const color = onStick ? STICK : onStickEdge ? BG : pinIndex >= 0 ? PIN : BG
 
       const offset = (y * size + x) * 3
       pixels[offset] = color[0]
