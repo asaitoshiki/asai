@@ -35,7 +35,7 @@ export const TournamentSetupPage = () => {
         <SectionTitle>大会名</SectionTitle>
         <TextInput
           value={name}
-          placeholder="春の社内モルック大会"
+          placeholder="大会の名前"
           onChange={(event) => setName(event.target.value)}
         />
       </section>

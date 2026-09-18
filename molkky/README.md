@@ -46,6 +46,19 @@ src/
 試合の状態（得点・連続ミス・手番）は保存せず、投球記録の配列から毎回導出している。
 そのため「1 投取消」は記録を 1 件削るだけで成立し、途中で状態が食い違うことがない。
 
+## Web に公開する
+
+`.github/workflows/deploy-molkky.yml` が `molkky/` をビルドして GitHub Pages に公開する。
+はじめて使うときだけ、リポジトリ側で 2 つ設定する。
+
+1. Settings → Pages → Source を「GitHub Actions」にする
+2. このディレクトリを含むブランチを `main` にマージする（以降は `molkky/` への push で自動公開）
+
+プライベートリポジトリの GitHub Pages は有料プランが必要なため、無料のままなら
+リポジトリを public にするか、Cloudflare Pages / Vercel / Netlify を使う。
+どれも「ビルドコマンド `npm run build`、出力 `dist`、ルートディレクトリ `molkky`」の
+3 つを指定するだけで動く。
+
 ## 今後の展開
 
 1. **Web（現在）** — PWA としてホーム画面に追加できる。GitHub Pages などに静的配信できる
