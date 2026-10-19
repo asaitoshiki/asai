@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<style>body{margin:0}</style>
+</head>
+<body>
+<title>ラップスタア誕生 アーカイブ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="ABEMAのラッパー発掘オーディション番組『ラップスタア誕生』（現『RAPSTAR』）の歴代優勝者・審査員・応募者数のまとめ">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* レイアウト: ステージのスポットライト風ヒーロー → 現行シーズン → 応募者数グラフ → 歴代シーズン年表 → 出典 */
+:root {
+  --bg: #f3f2f7;
+  --surface: #ffffff;
+  --fg: #17162a;
+  --muted: #5d5b74;
+  --line: #d9d7e6;
+  --accent: #a8740a;
+  --accent-soft: #f4e6c4;
+  --stage: #1c1a3a;
+  --stage-fg: #f6f3ff;
+  --font-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #100f20; --surface: #1a1930; --fg: #ece9fa; --muted: #a29fbd; --line: #2e2c4a;
+    --accent: #e7b54a; --accent-soft: #3a2f17; --stage: #07061a; --stage-fg: #f6f3ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #100f20; --surface: #1a1930; --fg: #ece9fa; --muted: #a29fbd; --line: #2e2c4a;
+  --accent: #e7b54a; --accent-soft: #3a2f17; --stage: #07061a; --stage-fg: #f6f3ff;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.8;
+}
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap {
+  max-width: 1040px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; line-height: 1.25; text-wrap: balance; margin: 0; }
+.label {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent);
+}
+
+/* ヒーロー: 暗いステージにスポットライト */
+.hero {
+  background:
+    radial-gradient(ellipse 60% 90% at 78% -10%, color-mix(in srgb, var(--accent) 38%, transparent), transparent 70%),
+    var(--stage);
+  color: var(--stage-fg);
+}
+.hero .wrap { padding-block: 72px 56px; display: grid; gap: 20px; }
+.hero h1 { font-size: clamp(40px, 9vw, 88px); letter-spacing: .01em; }
+.hero h1 small { display: block; font-family: var(--font-mono); font-size: clamp(14px, 2.4vw, 18px); letter-spacing: .3em; color: var(--accent); margin-top: 8px; }
+.hero p { max-width: 62ch; margin: 0; color: color-mix(in srgb, var(--stage-fg) 82%, transparent); }
+.facts { display: flex; flex-wrap: wrap; gap: 12px 32px; margin-top: 12px; }
+.facts div { display: grid; }
+.facts dt { font-size: 12px; letter-spacing: .1em; color: color-mix(in srgb, var(--stage-fg) 60%, transparent); }
+.facts dd { margin: 0; font-family: var(--font-display); font-size: 24px; font-variant-numeric: tabular-nums; }
+
+section .wrap { padding-block: 56px; display: grid; gap: 24px; }
+section h2 { font-size: clamp(24px, 4vw, 34px); }
+.lead { max-width: 65ch; margin: 0; color: var(--muted); }
+
+/* 現行シーズン */
+.now { border-bottom: 1px solid var(--line); }
+.now-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 20px; min-width: 0; display: grid; gap: 8px; align-content: start; }
+.panel h3 { font-size: 16px; }
+.panel p { margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 13px; padding: 2px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--fg); white-space: nowrap; }
+.big { font-family: var(--font-display); font-size: 30px; font-variant-numeric: tabular-nums; }
+.live { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--accent); }
+.live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+/* 応募者数グラフ（横棒・同一スケール） */
+.bars { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.bars li { display: grid; grid-template-columns: 5.5em 1fr; align-items: center; gap: 12px; }
+.bars .yr { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.bars .track { position: relative; height: 28px; }
+.bars .bar { height: 100%; width: var(--w); background: color-mix(in srgb, var(--accent) 70%, var(--line)); border-radius: 0 3px 3px 0; min-width: 2px; }
+.bars li:last-child .bar { background: var(--accent); }
+.bars .val { position: absolute; top: 50%; transform: translateY(-50%); left: calc(var(--w) + 8px); font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bars li.wide .val { left: auto; right: 8px; color: var(--stage-fg); }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+
+/* 歴代シーズン年表 */
+.seasons { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.season { display: grid; grid-template-columns: 8.5em 1fr; gap: 8px 24px; padding-block: 24px; border-bottom: 1px solid var(--line); }
+.season .when { display: grid; align-content: start; gap: 2px; }
+.season .when b { font-family: var(--font-display); font-weight: 400; font-size: 22px; font-variant-numeric: tabular-nums; }
+.season .when span { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.season .body { display: grid; gap: 8px; min-width: 0; }
+.winner { font-family: var(--font-display); font-size: clamp(22px, 3.6vw, 30px); }
+.winner::before { content: "★ "; color: var(--accent); }
+.season dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; font-size: 14px; }
+.season dt { color: var(--muted); }
+.season dd { margin: 0; min-width: 0; }
+.tag { font-size: 12px; border: 1px solid var(--accent); color: var(--accent); border-radius: 3px; padding: 0 6px; margin-left: 6px; white-space: nowrap; }
+
+/* 出演者が審査員になった流れ */
+.loop { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.loop .panel b { font-family: var(--font-display); font-weight: 400; font-size: 20px; }
+.arrow { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+
+.sources ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; font-size: 14px; }
+footer .wrap { padding-block: 32px 48px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); }
+
+@media (max-width: 560px) {
+  .season { grid-template-columns: 1fr; }
+  .season .when { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: 12px; }
+  .season dl { grid-template-columns: 1fr; gap: 0; }
+  .season dd { margin-bottom: 6px; }
+}
+</style>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="label">ABEMA original audition</span>
+    <h1>ラップスタア誕生<small>RAPSTAR 2017 – 2026</small></h1>
+    <p>ABEMAが2017年から続ける、次世代ラッパーを発掘するオーディション番組。応募者は審査員の前で課題をこなし、勝ち残った数人が決勝のステージで1曲を披露して頂点を争います。2024年のシーズンから番組名は「ラップスタア」（RAPSTAR）になりました。</p>
+    <dl class="facts">
+      <div><dt>これまでの優勝者</dt><dd>8人</dd></div>
+      <div><dt>優勝賞金</dt><dd>300万円</dd></div>
+      <div><dt>2026年の応募者</dt><dd>12,953人</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main>
+  <section class="now" id="now">
+    <div class="wrap">
+      <span class="live">放送中</span>
+      <h2>RAPSTAR 2026</h2>
+      <p class="lead">2026年10月10日（土）夜10時からABEMAで無料放送が始まりました。応募者はシリーズ最多の12,953人です。</p>
+      <div class="now-grid">
+        <div class="panel">
+          <h3>審査員（7人）</h3>
+          <div class="chips">
+            <span class="chip">SEEDA</span><span class="chip">R-指定</span><span class="chip">Benjazzy</span><span class="chip">KM</span><span class="chip">C.O.S.A.</span><span class="chip">LEX</span><span class="chip">¥ellow Bucks</span>
+          </div>
+          <p class="note">C.O.S.A.とKMは初参加。LEXと¥ellow Bucksは2024年以来2度目。</p>
+        </div>
+        <div class="panel">
+          <h3>ビートメイカー</h3>
+          <div class="chips">
+            <span class="chip">Chaki Zulu</span><span class="chip">D3adStock</span><span class="chip">GRADIS NICE</span><span class="chip">krynX</span><span class="chip">Lion Melo</span><span class="chip">Neetz</span><span class="chip">rxl</span>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>決勝イベント「STARZ 2026」</h3>
+          <span class="big">12.29</span>
+          <p>2026年12月29日（火）、有明アリーナで開催予定。</p>
+        </div>
+      </div>
+      <p><a href="https://abema.tv/" target="_blank" rel="noopener">ABEMAで番組を見る</a></p>
+    </div>
+  </section>
+
+  <section id="entries">
+    <div class="wrap">
+      <span class="label">Entries</span>
+      <h2>応募者数の推移</h2>
+      <p class="lead">報道で数字が確認できたシーズンだけを並べています。2018年の291人から、2026年には約45倍まで増えました。</p>
+      <!-- 幅は最大値12,953人を100%とした比率 -->
+      <ul class="bars">
+        <li style="--w: 2.2%"><span class="yr">2018 S2</span><span class="track"><span class="bar"></span><span class="val">291人</span></span></li>
+        <li style="--w: 10.9%"><span class="yr">2020</span><span class="track"><span class="bar"></span><span class="val">1,416人</span></span></li>
+        <li style="--w: 19.7%"><span class="yr">2021</span><span class="track"><span class="bar"></span><span class="val">2,546人</span></span></li>
+        <li style="--w: 26.7%"><span class="yr">2023</span><span class="track"><span class="bar"></span><span class="val">3,457人</span></span></li>
+        <li style="--w: 52.3%"><span class="yr">2025</span><span class="track"><span class="bar"></span><span class="val">6,780人</span></span></li>
+        <li class="wide" style="--w: 100%"><span class="yr">2026</span><span class="track"><span class="bar"></span><span class="val">12,953人</span></span></li>
+      </ul>
+      <p class="note">2017年・2018〜19年（S3）・2024年は応募者数の報道を確認できなかったため省いています。</p>
+    </div>
+  </section>
+
+  <section id="seasons">
+    <div class="wrap">
+      <span class="label">Hall of fame</span>
+      <h2>歴代シーズンと優勝者</h2>
+      <div class="seasons">
+
+        <article class="season">
+          <div class="when"><b>2025</b><span>SEASON 8</span></div>
+          <div class="body">
+            <div class="winner">Pxrge Trxxxper</div>
+            <dl>
+              <dt>決勝</dt><dd>2025年12月13日。Sonsi、Masato Hayashiとの接戦を僅差で制し、19歳で優勝</dd>
+              <dt>決勝曲</dt><dd>REVENGE</dd>
+              <dt>審査員</dt><dd>SEEDA、R-指定、ZOT on the WAVE、Benjazzy、kZm、OMSB</dd>
+              <dt>応募者</dt><dd>6,780人</dd>
+            </dl>
+          </div>
+        </article>
+
+        <article class="season">
+          <div class="when"><b>2024</b><span>SEASON 7</span></div>
+          <div class="body">
+            <div class="winner">Kohjiya</div>
+            <dl>
+              <dt>準優勝</dt><dd>Charlu</dd>
+              <dt>決勝</dt><dd>2024年6月29日、イベント「STARZ」で決定。この年から番組名が「ラップスタア」に</dd>
+              <dt>審査員</dt><dd>SEEDA、R-指定、LEX、¥ellow Bucks ほか（6人）</dd>
+            </dl>
+          </div>
+        </article>
+
+        <article class="season">
+          <div class="when"><b>2023</b><span>SEASON 6</span></div>
+          <div class="body">
+            <div class="winner">ShowyVICTOR<span class="tag">敗者復活</span></div>
+            <dl>
+              <dt>2位・3位</dt><dd>Kay-on a.k.a. Kwi 4 Kang、Spada</dd>
+              <dt>ファイナリスト</dt><dd>AMO、7</dd>
+              <dt>決勝曲</dt><dd>LAST SAMURAI</dd>
+              <dt>審査員</dt><dd>AKLO、Awich、R-指定、ralph、SEEDA、WILYWNKA</dd>
+              <dt>応募者</dt><dd>3,457人</dd>
+            </dl>
+          </div>
+        </article>
+
+        <article class="season">
+          <div class="when"><b>2021</b><span>SEASON 5</span></div>
+          <div class="body">
+            <div class="winner">eyden</div>
+            <dl>
+              <dt>準優勝</dt><dd>EASTA</dd>
+              <dt>審査員</dt><dd>AKLO、Awich、R-指定、IO、T-Pablow、YZERR</dd>
+              <dt>応募者</dt><dd>2,546人</dd>
+            </dl>
+          </div>
+        </article>
+
+        <article class="season">
+          <div class="when"><b>2020</b><span>SEASON 4</span></div>
+          <div class="body">
+            <div class="winner">ralph</div>
+            <dl>
+              <dt>ファイナリスト</dt><dd>noma、麻凛亜女、week dudus、Itaq（敗者復活）</dd>
+              <dt>応募者</dt><dd>1,416人（当時の最多）</dd>
+            </dl>
+          </div>
+        </article>
+
+        <article class="season">
+          <div class="when"><b>2018–19</b><span>SEASON 3</span></div>
+          <div class="body">
+            <div class="winner">¥ellow Bucks</div>
+            <dl>
+              <dt>ファイナリスト</dt><dd>Joseph Blackwell、Flight-A、SANTAWORLDVIEW、Jua（敗者復活）</dd>
+              <dt>放送</dt><dd>2018年10月10日〜2019年1月30日。名古屋を拠点に活動していた23歳が優勝</dd>
+              <dt>審査員</dt><dd>SEEDA、HUNGER、ANARCHY ほか</dd>
+            </dl>
+          </div>
+        </article>
+
+        <article class="season">
+          <div class="when"><b>2018</b><span>SEASON 2</span></div>
+          <div class="body">
+            <div class="winner">Leon Fanourakis</div>
+            <dl>
+              <dt>準優勝</dt><dd>MC小法師</dd>
+              <dt>決勝</dt><dd>2018年6月27日。横浜出身</dd>
+              <dt>応募者</dt><dd>291人</dd>
+            </dl>
+          </div>
+        </article>
+
+        <article class="season">
+          <div class="when"><b>2017</b><span>SEASON 1</span></div>
+          <div class="body">
+            <div class="winner">DAIA</div>
+            <dl>
+              <dt>2位・3位</dt><dd>WillyWonka a.k.a. Taka（現 WILYWNKA）、JIROW WONDA</dd>
+              <dt>審査員</dt><dd>Kダブシャイン（審査員長）、ANARCHY、HUNGER（GAGLE）、SEEDA、伊藤雄介（Amebreak編集長）</dd>
+            </dl>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="judges">
+    <div class="wrap">
+      <span class="label">From the stage to the panel</span>
+      <h2>出場者から審査員へ</h2>
+      <p class="lead">番組に挑戦したラッパーが、のちのシーズンで審査する側に回っています。</p>
+      <div class="loop">
+        <div class="panel"><b>WILYWNKA</b><span class="arrow">2017 2位 → 2023 審査員</span></div>
+        <div class="panel"><b>ralph</b><span class="arrow">2020 優勝 → 2023 審査員</span></div>
+        <div class="panel"><b>¥ellow Bucks</b><span class="arrow">2018–19 優勝 → 2024・2026 審査員</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sources" id="sources">
+    <div class="wrap">
+      <span class="label">Sources</span>
+      <h2>出典</h2>
+      <ul>
+        <li><a href="https://times.abema.tv/articles/-/10275511" target="_blank" rel="noopener">ABEMA TIMES：『RAPSTAR 2026』放送開始と審査員</a></li>
+        <li><a href="https://times.abema.tv/articles/-/10279271" target="_blank" rel="noopener">ABEMA TIMES：『STARZ 2026』有明アリーナで開催決定</a></li>
+        <li><a href="https://kai-you.net/article/94104" target="_blank" rel="noopener">KAI-YOU：「ラップスタア 2025」優勝はPxrge Trxxxperに決定</a></li>
+        <li><a href="https://thecage.tokyo/archives/11453" target="_blank" rel="noopener">CAGE：『RAPSTAR 2025』応募総数6780人</a></li>
+        <li><a href="https://fnmnl.tv/2024/06/25/160323" target="_blank" rel="noopener">FNMNL：『STARZ』で『ラップスタア 2024』優勝者が決定</a></li>
+        <li><a href="https://natalie.mu/music/news/527163" target="_blank" rel="noopener">音楽ナタリー：3457人から選ばれた新ラップスタア（2023）</a></li>
+        <li><a href="https://times.abema.tv/articles/-/10009978" target="_blank" rel="noopener">ABEMA TIMES：『ラップスタア誕生2021』優勝はeyden</a></li>
+        <li><a href="https://kai-you.net/article/78662" target="_blank" rel="noopener">KAI-YOU：「ラップスタア誕生」優勝はralph</a></li>
+        <li><a href="https://www.tvlife.jp/entame/209461" target="_blank" rel="noopener">TV LIFE：『ラップスタア誕生！』S3優勝は¥ELLOW BUCKS</a></li>
+        <li><a href="https://ja.wikipedia.org/wiki/%E3%83%A9%E3%83%83%E3%83%97%E3%82%B9%E3%82%BF%E3%82%A2%E8%AA%95%E7%94%9F!" target="_blank" rel="noopener">Wikipedia：ラップスタア誕生!</a></li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">2026年10月19日時点の報道をもとにまとめた非公式のファンページです。番組の公式サイトではありません。</div>
+</footer>
+
+</body>
+</html>
