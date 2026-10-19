@@ -89,6 +89,15 @@ section h2 { font-size: clamp(24px, 4vw, 34px); }
 .live { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--accent); }
 .live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
 
+/* サイファー審査のグループ一覧 */
+.cypher { border-bottom: 1px solid var(--line); }
+.groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.group h3 { display: flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 13px; letter-spacing: .12em; color: var(--muted); }
+.group .gl { font-family: var(--font-display); font-size: 26px; letter-spacing: 0; color: var(--accent); }
+.group ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; font-weight: 700; }
+.group .links { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; margin-top: 4px; }
+.group.pending { border-style: dashed; background: transparent; }
+
 /* 応募者数グラフ（横棒・同一スケール） */
 .bars { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .bars li { display: grid; grid-template-columns: 5.5em 1fr; align-items: center; gap: 12px; }
@@ -137,7 +146,7 @@ footer .wrap { padding-block: 32px 48px; font-size: 13px; color: var(--muted); b
     <p>ABEMAが2017年から続ける、次世代ラッパーを発掘するオーディション番組。応募者は審査員の前で課題をこなし、勝ち残った数人が決勝のステージで1曲を披露して頂点を争います。2024年のシーズンから番組名は「ラップスタア」（RAPSTAR）になりました。</p>
     <dl class="facts">
       <div><dt>これまでの優勝者</dt><dd>8人</dd></div>
-      <div><dt>優勝賞金</dt><dd>300万円</dd></div>
+      <div><dt>2026年の優勝賞金</dt><dd>1,000万円</dd></div>
       <div><dt>2026年の応募者</dt><dd>12,953人</dd></div>
     </dl>
   </div>
@@ -148,7 +157,7 @@ footer .wrap { padding-block: 32px 48px; font-size: 13px; color: var(--muted); b
     <div class="wrap">
       <span class="live">放送中</span>
       <h2>RAPSTAR 2026</h2>
-      <p class="lead">2026年10月10日（土）夜10時からABEMAで無料放送が始まりました。応募者はシリーズ最多の12,953人です。</p>
+      <p class="lead">シーズン9。2026年10月10日（土）夜10時からABEMAで無料放送が始まりました。応募者はシリーズ最多の12,953人で、優勝賞金はこれまでの300万円から1,000万円に上がりました。</p>
       <div class="now-grid">
         <div class="panel">
           <h3>審査員（7人）</h3>
@@ -170,6 +179,51 @@ footer .wrap { padding-block: 32px 48px; font-size: 13px; color: var(--muted); b
         </div>
       </div>
       <p><a href="https://abema.tv/" target="_blank" rel="noopener">ABEMAで番組を見る</a></p>
+    </div>
+  </section>
+
+  <section class="cypher" id="cypher">
+    <div class="wrap">
+      <span class="label">Selection cypher</span>
+      <h2>サイファー審査の出場者</h2>
+      <p class="lead">動画審査を通った40人が5人ずつ8組に分かれ、DJ CHARIのもとでマイクを回します。審査員の投票で12人が次のステージへ進みます。10月19日までにA〜Fの6組が公開されました。</p>
+      <div class="groups">
+        <div class="panel group">
+          <h3><span class="gl">A</span>GROUP A</h3>
+          <ul><li>BabyNyca</li><li>jellyy</li><li>Joe Cupertino</li><li>Nust B</li><li>Almond_Eye</li></ul>
+          <div class="links"><a href="https://www.youtube.com/watch?v=5V12g9GI4Yw" target="_blank" rel="noopener">動画</a><a href="https://rednote.hatenablog.jp/entry/RAPSTAR2026_SELECTIONCYPHER_GROUP_A" target="_blank" rel="noopener">詳細（RED NOTE）</a></div>
+        </div>
+        <div class="panel group">
+          <h3><span class="gl">B</span>GROUP B</h3>
+          <ul><li>MOSURA</li><li>ksr:3</li><li>REGALDNAGARE</li><li>Nia Varan</li><li>Andersen</li></ul>
+          <div class="links"><a href="https://youtu.be/0Wv46U1p1lg" target="_blank" rel="noopener">動画</a><a href="https://rednote.hatenablog.jp/entry/RAPSTAR2026_SELECTIONCYPHER_GROUP_B" target="_blank" rel="noopener">リリック書き起こし（RED NOTE）</a></div>
+        </div>
+        <div class="panel group">
+          <h3><span class="gl">C</span>GROUP C</h3>
+          <ul><li>S TILL I DIE</li><li>AI jacky</li><li>Esosa Vee</li><li>Filix王</li><li>SEISA</li></ul>
+          <div class="links"><a href="https://youtu.be/O_3sObZ57mc" target="_blank" rel="noopener">動画</a><a href="https://rednote.hatenablog.jp/entry/RAPSTAR2026_SELECTIONCYPHER_GROUP_C" target="_blank" rel="noopener">リリック書き起こし（RED NOTE）</a></div>
+        </div>
+        <div class="panel group">
+          <h3><span class="gl">D</span>GROUP D</h3>
+          <ul><li>JAYBAB</li><li>MARONI</li><li>Saggypants Shimba</li><li>lyricsbyrico</li><li>MADEINBEN10</li></ul>
+          <div class="links"><a href="https://youtu.be/Mx-ygyqXz0w" target="_blank" rel="noopener">動画</a></div>
+        </div>
+        <div class="panel group">
+          <h3><span class="gl">E</span>GROUP E</h3>
+          <ul><li>$ILVA</li><li>Worldwide Skippa</li><li>SAFUJI</li><li>Will Support</li><li>Kee Rooz</li></ul>
+          <div class="links"><a href="https://youtu.be/lWYQ0L6WZF0" target="_blank" rel="noopener">動画</a></div>
+        </div>
+        <div class="panel group">
+          <h3><span class="gl">F</span>GROUP F</h3>
+          <p class="note">出場者の名前はまだ確認できていません。</p>
+          <div class="links"><a href="https://youtu.be/Z8nn1a_RnAo" target="_blank" rel="noopener">動画</a></div>
+        </div>
+        <div class="panel group pending">
+          <h3><span class="gl">G·H</span>GROUP G・H</h3>
+          <p class="note">今後の放送で公開予定。</p>
+        </div>
+      </div>
+      <p class="note">リリックは各ラッパーの作品なので、このページには本文を載せていません。歌詞は公式動画か、ファンによる書き起こしページ（<a href="https://rednote.hatenablog.jp/entry/RAPSTAR2026_SELECTIONCYPHER_Summary" target="_blank" rel="noopener">RED NOTE のまとめ</a>）で確認できます。</p>
     </div>
   </section>
 
@@ -318,6 +372,8 @@ footer .wrap { padding-block: 32px 48px; font-size: 13px; color: var(--muted); b
       <ul>
         <li><a href="https://times.abema.tv/articles/-/10275511" target="_blank" rel="noopener">ABEMA TIMES：『RAPSTAR 2026』放送開始と審査員</a></li>
         <li><a href="https://times.abema.tv/articles/-/10279271" target="_blank" rel="noopener">ABEMA TIMES：『STARZ 2026』有明アリーナで開催決定</a></li>
+        <li><a href="https://kai-you.net/article/95562" target="_blank" rel="noopener">KAI-YOU：「RAPSTAR 2026」優勝賞金は過去最高の1000万円に</a></li>
+        <li><a href="https://x.com/rapstar_jp" target="_blank" rel="noopener">ラップスタア公式X：SELECTION CYPHER 各グループの告知</a></li>
         <li><a href="https://kai-you.net/article/94104" target="_blank" rel="noopener">KAI-YOU：「ラップスタア 2025」優勝はPxrge Trxxxperに決定</a></li>
         <li><a href="https://thecage.tokyo/archives/11453" target="_blank" rel="noopener">CAGE：『RAPSTAR 2025』応募総数6780人</a></li>
         <li><a href="https://fnmnl.tv/2024/06/25/160323" target="_blank" rel="noopener">FNMNL：『STARZ』で『ラップスタア 2024』優勝者が決定</a></li>
