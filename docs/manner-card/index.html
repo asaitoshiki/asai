@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ローカルルール翻訳カード</title>
+  <meta name="description" content="お店や施設のルールを選ぶだけで、英語・中国語・韓国語つきの貼り紙を印刷できます。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+KR:wght@400;700&family=Noto+Sans+SC:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header no-print">
+    <h1>ローカルルール翻訳カード</h1>
+    <p>伝えたいルールを選ぶだけで、外国のお客さま向けの貼り紙ができます。</p>
+  </header>
+
+  <main class="layout">
+    <aside class="panel no-print">
+      <section>
+        <h2>1. お店・施設の名前（任意）</h2>
+        <input id="shop-name" type="text" placeholder="例：そば処 あさい" maxlength="40">
+      </section>
+
+      <section>
+        <h2>2. 載せる言語</h2>
+        <p class="hint">日本語は常に表示されます</p>
+        <div id="lang-list" class="chips"></div>
+      </section>
+
+      <section>
+        <h2>3. ルールを選ぶ</h2>
+        <div id="rule-list"></div>
+      </section>
+
+      <section>
+        <h2>4. オリジナルのルールを追加</h2>
+        <p class="hint">翻訳は自動で行いません。わかる言語だけ入力してください</p>
+        <form id="custom-form" class="custom-form">
+          <input name="icon" type="text" placeholder="絵文字 例：🍜" maxlength="4">
+          <input name="ja" type="text" placeholder="日本語（必須）" required>
+          <input name="en" type="text" placeholder="English">
+          <input name="zhHans" type="text" placeholder="简体中文">
+          <input name="zhHant" type="text" placeholder="繁體中文">
+          <input name="ko" type="text" placeholder="한국어">
+          <button type="submit">追加する</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>5. レイアウト</h2>
+        <label class="radio"><input type="radio" name="layout" value="list" checked> 一覧（A4に1枚）</label>
+        <label class="radio"><input type="radio" name="layout" value="single"> 1ルールずつ大きく（A4に1ルール）</label>
+      </section>
+
+      <button id="print-btn" class="print-btn" type="button">🖨️ 印刷する</button>
+      <button id="reset-btn" class="reset-btn" type="button">選択をリセット</button>
+    </aside>
+
+    <section class="preview-wrap">
+      <h2 class="no-print">プレビュー</h2>
+      <div id="preview"></div>
+    </section>
+  </main>
+
+  <script src="rules.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
