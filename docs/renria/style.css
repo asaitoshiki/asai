@@ -1,0 +1,87 @@
+:root {
+  --bg: #fff8f9;
+  --surface: #ffffff;
+  --text: #2b2326;
+  --muted: #7a6b70;
+  --accent: #d6457a;
+  --border: #f0dde3;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Hiragino Sans", "Noto Sans JP", sans-serif;
+  line-height: 1.7;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.site-title { font-weight: 700; font-size: 1.1rem; color: var(--text); }
+.site-header nav { display: flex; gap: 16px; }
+
+main { max-width: 960px; margin: 0 auto; padding: 16px; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.filters input, .filters select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 1rem;
+  background: var(--surface);
+}
+.filters input { flex: 1 1 200px; }
+
+.count { color: var(--muted); font-size: 0.9rem; margin-bottom: 8px; }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.card {
+  display: block;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+}
+.card:hover { border-color: var(--accent); text-decoration: none; }
+.card .name { font-weight: 700; }
+.card .meta { color: var(--muted); font-size: 0.85rem; }
+
+h1 { font-size: 1.5rem; margin: 8px 0 4px; }
+h2 { font-size: 1.1rem; margin: 24px 0 8px; border-left: 4px solid var(--accent); padding-left: 8px; }
+.kana { color: var(--muted); }
+
+table { width: 100%; border-collapse: collapse; background: var(--surface); }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { width: 9em; color: var(--muted); font-weight: 500; }
+
+ul.plain { padding-left: 1.2em; margin: 0; }
+.tag {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 10px;
+  background: #fde7ef;
+  color: var(--accent);
+  font-size: 0.8rem;
+  margin-right: 4px;
+}
+.sources { font-size: 0.85rem; word-break: break-all; }
+
+.site-footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 24px 16px; }

@@ -1,0 +1,166 @@
+{
+  "shows": [
+    {
+      "id": "bachelor-japan",
+      "title": "バチェラー・ジャパン",
+      "platform": "Prime Video",
+      "seasons": [
+        { "id": "bachelor-japan-1", "label": "シーズン1", "year": 2017 },
+        { "id": "bachelor-japan-2", "label": "シーズン2", "year": 2018 },
+        { "id": "bachelor-japan-3", "label": "シーズン3", "year": 2019 },
+        { "id": "bachelor-japan-4", "label": "シーズン4", "year": 2021 },
+        { "id": "bachelor-japan-5", "label": "シーズン5", "year": 2023 }
+      ]
+    },
+    {
+      "id": "bachelorette-japan",
+      "title": "バチェロレッテ・ジャパン",
+      "platform": "Prime Video",
+      "seasons": [
+        { "id": "bachelorette-japan-1", "label": "シーズン1", "year": 2020 },
+        { "id": "bachelorette-japan-2", "label": "シーズン2", "year": 2022 },
+        { "id": "bachelorette-japan-3", "label": "シーズン3", "year": 2024 }
+      ]
+    }
+  ],
+  "people": [
+    {
+      "id": "kubo-hirotake",
+      "name": "久保裕丈",
+      "gender": "男性",
+      "profile": { "経歴": "IT企業の元社長" },
+      "appearances": [{ "season": "bachelor-japan-1", "role": "バチェラー（初代）" }],
+      "sources": ["https://ciatr.jp/topics/323784"]
+    },
+    {
+      "id": "aokawa-ai",
+      "name": "蒼川愛",
+      "gender": "女性",
+      "profile": {},
+      "appearances": [{ "season": "bachelor-japan-1", "role": "参加女性" }],
+      "sources": ["https://ciatr.jp/topics/323784"]
+    },
+    {
+      "id": "oyaizu-rintaro",
+      "name": "小柳津林太郎",
+      "gender": "男性",
+      "profile": {},
+      "appearances": [{ "season": "bachelor-japan-2", "role": "バチェラー（2代目）" }],
+      "sources": ["https://www.oricon.co.jp/news/2101701/full/"]
+    },
+    {
+      "id": "kurata-mami",
+      "name": "倉田茉美",
+      "gender": "女性",
+      "profile": { "出身": "京都府", "職業（出演時）": "イラストレーター", "年齢（出演時）": "27歳" },
+      "appearances": [{ "season": "bachelor-japan-2", "role": "参加女性" }],
+      "sources": ["https://www.oricon.co.jp/news/2101701/full/"]
+    },
+    {
+      "id": "tomonaga-shinya",
+      "name": "友永真也",
+      "gender": "男性",
+      "profile": { "経歴": "フランス育ちの実業家" },
+      "appearances": [{ "season": "bachelor-japan-3", "role": "バチェラー（3代目）" }],
+      "sources": ["https://news.allabout.co.jp/articles/o/82238/", "https://mdpr.jp/news/detail/1927946"]
+    },
+    {
+      "id": "mizuta-ayumi",
+      "name": "水田あゆみ",
+      "gender": "女性",
+      "profile": {},
+      "appearances": [{ "season": "bachelor-japan-3", "role": "参加女性" }],
+      "sources": ["https://ciatr.jp/topics/323784?page=2"]
+    },
+    {
+      "id": "iwama-megumi",
+      "name": "岩間恵",
+      "gender": "女性",
+      "profile": {},
+      "appearances": [{ "season": "bachelor-japan-3", "role": "参加女性（最終候補）" }],
+      "sources": ["https://ciatr.jp/topics/323784?page=2", "https://i-voce.jp/feed/1055001/"]
+    },
+    {
+      "id": "huang-hao",
+      "name": "黄皓",
+      "kana": "コウコウ",
+      "gender": "男性",
+      "profile": { "経歴": "中国出身の実業家" },
+      "appearances": [
+        { "season": "bachelorette-japan-1", "role": "参加男性" },
+        { "season": "bachelor-japan-4", "role": "バチェラー（4代目）" }
+      ],
+      "sources": ["https://www.oricon.co.jp/news/2285261/full/"]
+    },
+    {
+      "id": "akikura-ryoko",
+      "name": "秋倉諒子",
+      "gender": "女性",
+      "profile": { "出身": "千葉県" },
+      "appearances": [{ "season": "bachelor-japan-4", "role": "参加女性" }],
+      "sources": ["https://www.oricon.co.jp/news/2285261/full/"]
+    },
+    {
+      "id": "hasegawa-keiichi",
+      "name": "長谷川惠一",
+      "gender": "男性",
+      "profile": { "職業（出演時）": "プロバスケットボール選手" },
+      "appearances": [
+        { "season": "bachelorette-japan-2", "role": "参加男性（最終2人）" },
+        { "season": "bachelor-japan-5", "role": "バチェラー（5代目）" }
+      ],
+      "sources": ["https://www.jprime.jp/articles/-/24689", "https://realsound.jp/tech/2023/07/post-1375995.html"]
+    },
+    {
+      "id": "ouchi-yuri",
+      "name": "大内悠里",
+      "gender": "女性",
+      "profile": {},
+      "appearances": [{ "season": "bachelor-japan-5", "role": "参加女性" }],
+      "sources": ["https://www.oricon.co.jp/special/51350/"]
+    },
+    {
+      "id": "fukuda-moeko",
+      "name": "福田萌子",
+      "gender": "女性",
+      "profile": {},
+      "appearances": [{ "season": "bachelorette-japan-1", "role": "バチェロレッテ（初代）" }],
+      "sources": ["https://forbesjapan.com/articles/detail/38596"]
+    },
+    {
+      "id": "ozaki-miki",
+      "name": "尾崎美紀",
+      "gender": "女性",
+      "profile": {},
+      "appearances": [{ "season": "bachelorette-japan-2", "role": "バチェロレッテ（2代目）" }],
+      "sources": ["https://www.jprime.jp/articles/-/24689"]
+    },
+    {
+      "id": "sato-macfarlane-yuki",
+      "name": "佐藤マクファーレン優樹",
+      "gender": "男性",
+      "profile": { "職業（出演時）": "プロバスケットボール選手" },
+      "appearances": [{ "season": "bachelorette-japan-2", "role": "参加男性（最終2人）" }],
+      "sources": ["https://www.jprime.jp/articles/-/24689"]
+    },
+    {
+      "id": "takei-aki",
+      "name": "武井亜樹",
+      "gender": "女性",
+      "profile": { "経歴": "東大卒・元官僚、宇宙事業に携わる" },
+      "appearances": [{ "season": "bachelorette-japan-3", "role": "バチェロレッテ（3代目）" }],
+      "sources": ["https://press.aboutamazon.com/jp/news/小売/2024/5/バチェロレッテ-ジャパンシーズン3-東大卒-元官僚の武井亜樹が新バチェロレッテに抜擢-宇宙事業に携わる才女が真実の愛を探す旅へ"]
+    }
+  ],
+  "relations": [
+    { "from": "kubo-hirotake", "to": "aokawa-ai", "type": "交際（番組後）", "note": "のちに破局", "season": "bachelor-japan-1", "source": "https://ciatr.jp/topics/323784" },
+    { "from": "oyaizu-rintaro", "to": "kurata-mami", "type": "ファイナルローズ", "note": "家族の前でプロポーズ", "season": "bachelor-japan-2", "source": "https://www.oricon.co.jp/news/2101701/full/" },
+    { "from": "tomonaga-shinya", "to": "mizuta-ayumi", "type": "ファイナルローズ", "note": "約1ヶ月で破局", "season": "bachelor-japan-3", "source": "https://ciatr.jp/topics/323784?page=2" },
+    { "from": "tomonaga-shinya", "to": "iwama-megumi", "type": "結婚", "note": "番組後に交際を経て結婚", "season": "bachelor-japan-3", "source": "https://i-voce.jp/feed/1055001/" },
+    { "from": "huang-hao", "to": "akikura-ryoko", "type": "ファイナルローズ", "note": "出演前からの知り合い。のちに破局と報道", "season": "bachelor-japan-4", "source": "https://www.oricon.co.jp/news/2285261/full/" },
+    { "from": "hasegawa-keiichi", "to": "ouchi-yuri", "type": "ファイナルローズ", "season": "bachelor-japan-5", "source": "https://www.oricon.co.jp/special/51350/" },
+    { "from": "ozaki-miki", "to": "sato-macfarlane-yuki", "type": "最終選択", "season": "bachelorette-japan-2", "source": "https://www.jprime.jp/articles/-/24689" },
+    { "from": "huang-hao", "to": "fukuda-moeko", "type": "参加（バチェロレッテ）", "season": "bachelorette-japan-1", "source": "https://www.oricon.co.jp/news/2285261/full/" },
+    { "from": "hasegawa-keiichi", "to": "ozaki-miki", "type": "参加（バチェロレッテ）", "note": "最終2人まで残る", "season": "bachelorette-japan-2", "source": "https://www.jprime.jp/articles/-/24689" }
+  ]
+}
