@@ -1,7 +1,7 @@
 import pandas as pd
 import requests
 
-from fxbot.config import Settings
+from fxbot.config import OandaSettings
 
 # OANDA の1リクエストあたりの最大取得本数
 MAX_CANDLES = 5000
@@ -27,7 +27,7 @@ def candles_to_frame(candles: list[dict]) -> pd.DataFrame:
 
 
 class OandaClient:
-    def __init__(self, settings: Settings, session: requests.Session | None = None):
+    def __init__(self, settings: OandaSettings, session: requests.Session | None = None):
         self.settings = settings
         self.session = session or requests.Session()
         self.session.headers.update(

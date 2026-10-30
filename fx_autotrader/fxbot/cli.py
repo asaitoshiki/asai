@@ -6,9 +6,16 @@ from pathlib import Path
 import pandas as pd
 
 from fxbot import backtest, model
-from fxbot.config import BARS_PER_YEAR, load_settings
+from fxbot.config import BARS_PER_YEAR, load_gmo_settings, load_oanda_settings
+from fxbot.gmo import GmoClient
 from fxbot.live import Trader, run_forever
 from fxbot.oanda import OandaClient
+
+# 接続先ブローカーごとのクライアント生成（認証情報はそれぞれの環境変数から読む）
+CLIENTS = {
+    "gmo": lambda: GmoClient(load_gmo_settings()),
+    "oanda": lambda: OandaClient(load_oanda_settings()),
+}
 
 
 def load_csv(path: Path) -> pd.DataFrame:
@@ -16,7 +23,7 @@ def load_csv(path: Path) -> pd.DataFrame:
 
 
 def cmd_fetch(args: argparse.Namespace) -> None:
-    client = OandaClient(load_settings())
+    client = CLIENTS[args.broker]()
     df = client.history(args.instrument, args.granularity, pd.Timestamp(args.start, tz="UTC"))
     args.out.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.out)
@@ -30,7 +37,7 @@ def cmd_backtest(args: argparse.Namespace) -> None:
         train_size=args.train_size,
         test_size=args.test_size,
         threshold=args.threshold,
-        spread=args.spread,
+        cost=args.cost,
         bars_per_year=BARS_PER_YEAR[args.granularity],
     )
     print(json.dumps(result.metrics, indent=2, ensure_ascii=False))
@@ -47,7 +54,7 @@ def cmd_train(args: argparse.Namespace) -> None:
 def cmd_live(args: argparse.Namespace) -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     trader = Trader(
-        client=OandaClient(load_settings()),
+        client=CLIENTS[args.broker](),
         model=model.load(args.model),
         instrument=args.instrument,
         granularity=args.granularity,
@@ -64,6 +71,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(required=True)
 
     common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--broker", default="gmo", choices=list(CLIENTS))
     common.add_argument("--instrument", default="USD_JPY")
     common.add_argument("--granularity", default="H1", choices=list(BARS_PER_YEAR))
 
@@ -78,7 +86,12 @@ def build_parser() -> argparse.ArgumentParser:
     bt.add_argument("--train-size", type=int, default=4000)
     bt.add_argument("--test-size", type=int, default=500)
     bt.add_argument("--threshold", type=float, default=0.55, help="エントリーする上昇確率の閾値")
-    bt.add_argument("--spread", type=float, default=0.002, help="1回の売買コスト（価格単位）")
+    bt.add_argument(
+        "--cost",
+        type=float,
+        default=0.003,
+        help="片道の売買コスト（価格単位）。GMOコインのUSD/JPYならスプレッドの半分0.001＋API手数料0.002",
+    )
     bt.add_argument("--equity-out", type=Path, default=Path("data/equity.csv"))
     bt.set_defaults(func=cmd_backtest)
 
@@ -94,7 +107,7 @@ def build_parser() -> argparse.ArgumentParser:
     lv.add_argument("--threshold", type=float, default=0.55)
     lv.add_argument("--stop-loss", type=float, default=0.5, help="損切り幅（価格単位）")
     lv.add_argument("--max-loss", type=float, default=0.05, help="起動時NAVからの許容損失率")
-    lv.add_argument("--poll-seconds", type=int, default=30)
+    lv.add_argument("--poll-seconds", type=int, default=60)
     lv.set_defaults(func=cmd_live)
 
     return parser

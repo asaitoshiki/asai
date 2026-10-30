@@ -2,10 +2,10 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 
-from fxbot.config import Settings
+from fxbot.config import OandaSettings
 from fxbot.oanda import OandaClient, candles_to_frame
 
-SETTINGS = Settings(api_token="token", account_id="001-001-1", base_url="https://example.test")
+SETTINGS = OandaSettings(api_token="token", account_id="001-001-1", base_url="https://example.test")
 
 
 def candle(time: str, close: str, complete: bool = True) -> dict:

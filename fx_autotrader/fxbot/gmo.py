@@ -1,0 +1,173 @@
+import hashlib
+import hmac
+import json
+import time
+
+import numpy as np
+import pandas as pd
+import requests
+
+from fxbot.config import BAR_SECONDS, GmoSettings
+
+PUBLIC_URL = "https://forex-api.coin.z.com/public"
+PRIVATE_URL = "https://forex-api.coin.z.com/private"
+JST = "Asia/Tokyo"
+
+INTERVALS = {"M5": "5min", "M15": "15min", "H1": "1hour", "H4": "4hour", "D": "1day"}
+SIDES = {1: "BUY", -1: "SELL"}
+SIGNS = {"BUY": 1, "SELL": -1}
+# 買いは ask、売りは bid で約定する
+ENTRY_PRICE_KEYS = {1: "ask", -1: "bid"}
+# 決済通貨ごとの価格の小数桁（クロス円は3桁、それ以外は5桁）
+PRICE_DECIMALS = {"JPY": 3}
+
+
+class GmoApiError(Exception):
+    pass
+
+
+def _daily_keys(start: pd.Timestamp, end: pd.Timestamp) -> list[str]:
+    # 日曜（日本時間）は終日休場でデータが無いので除く
+    days = pd.date_range(start.normalize(), end.normalize(), freq="D")
+    return [d.strftime("%Y%m%d") for d in days if d.day_of_week != 6]
+
+
+def _yearly_keys(start: pd.Timestamp, end: pd.Timestamp) -> list[str]:
+    return [str(year) for year in range(start.year, end.year + 1)]
+
+
+# klines の date パラメータは1時間足以下なら日単位、それより長い足は年単位で指定する
+PERIOD_KEYS = {
+    "M5": _daily_keys,
+    "M15": _daily_keys,
+    "H1": _daily_keys,
+    "H4": _yearly_keys,
+    "D": _yearly_keys,
+}
+
+
+def klines_to_frame(klines: list[dict]) -> pd.DataFrame:
+    """APIレスポンスの data 配列を OHLC の DataFrame に変換する"""
+    df = pd.DataFrame(klines, columns=["openTime", "open", "high", "low", "close"])
+    index = pd.to_datetime(df["openTime"].astype("int64"), unit="ms", utc=True).rename("time")
+    return df[["open", "high", "low", "close"]].astype(float).set_index(index)
+
+
+def format_price(instrument: str, price: float) -> str:
+    decimals = PRICE_DECIMALS.get(instrument.split("_")[1], 5)
+    return f"{price:.{decimals}f}"
+
+
+class GmoClient:
+    """GMOコイン「外国為替FX」API クライアント。価格は BID を使う"""
+
+    def __init__(
+        self, settings: GmoSettings, session: requests.Session | None = None, request_interval: float = 0.2
+    ):
+        self.settings = settings
+        self.session = session or requests.Session()
+        # Public API の流量制限に掛からないよう連続取得時に空ける秒数
+        self.request_interval = request_interval
+
+    @staticmethod
+    def _unwrap(res: requests.Response):
+        res.raise_for_status()
+        body = res.json()
+        if body["status"] != 0:
+            raise GmoApiError(body["messages"])
+        return body["data"]
+
+    def _signed_headers(self, method: str, path: str, payload: str) -> dict:
+        # 署名対象は「タイムスタンプ + メソッド + パス（クエリ除く） + ボディ」
+        timestamp = str(int(time.time() * 1000))
+        text = f"{timestamp}{method}/v1/{path}{payload}"
+        sign = hmac.new(self.settings.api_secret.encode(), text.encode(), hashlib.sha256).hexdigest()
+        return {"API-KEY": self.settings.api_key, "API-TIMESTAMP": timestamp, "API-SIGN": sign}
+
+    def _public_get(self, path: str, params: dict | None = None):
+        return self._unwrap(self.session.get(f"{PUBLIC_URL}/v1/{path}", params=params, timeout=30))
+
+    def _private_get(self, path: str, params: dict | None = None):
+        headers = self._signed_headers("GET", path, "")
+        return self._unwrap(
+            self.session.get(f"{PRIVATE_URL}/v1/{path}", params=params, headers=headers, timeout=30)
+        )
+
+    def _private_post(self, path: str, body: dict):
+        payload = json.dumps(body)
+        headers = {**self._signed_headers("POST", path, payload), "Content-Type": "application/json"}
+        return self._unwrap(
+            self.session.post(f"{PRIVATE_URL}/v1/{path}", data=payload, headers=headers, timeout=30)
+        )
+
+    def klines(self, instrument: str, granularity: str, date_key: str) -> pd.DataFrame:
+        data = self._public_get(
+            "klines",
+            {"symbol": instrument, "priceType": "BID", "interval": INTERVALS[granularity], "date": date_key},
+        )
+        return klines_to_frame(data)
+
+    def history(self, instrument: str, granularity: str, start: pd.Timestamp) -> pd.DataFrame:
+        """start から現在までの確定足を取得する"""
+        now = pd.Timestamp.now(tz=JST)
+        # 日付の区切りが日本時間基準なので、前日分から取得して範囲外は後で落とす
+        keys = PERIOD_KEYS[granularity]((start - pd.Timedelta(days=1)).tz_convert(JST), now)
+        frames = []
+        for key in keys:
+            frames.append(self.klines(instrument, granularity, key))
+            time.sleep(self.request_interval)
+        df = pd.concat(frames).sort_index()
+        df = df[~df.index.duplicated(keep="first")]
+        # 終了時刻が現在より後の足は未確定なので除く
+        complete = df.index + pd.Timedelta(seconds=BAR_SECONDS[granularity]) <= now
+        return df[complete & (df.index >= start)]
+
+    def recent_candles(self, instrument: str, granularity: str, count: int) -> pd.DataFrame:
+        # 週末をはさんでも count 本そろうよう、必要期間の1.5倍＋3日さかのぼる
+        span = pd.Timedelta(seconds=BAR_SECONDS[granularity] * count * 1.5) + pd.Timedelta(days=3)
+        return self.history(instrument, granularity, pd.Timestamp.now(tz="UTC") - span).iloc[-count:]
+
+    def ticker(self, instrument: str) -> dict:
+        return next(t for t in self._public_get("ticker") if t["symbol"] == instrument)
+
+    def nav(self) -> float:
+        """時価評価総額（評価損益込みの資産）"""
+        return float(self._private_get("account/assets")[0]["equity"])
+
+    def net_units(self, instrument: str) -> int:
+        """保有ポジションのネット数量（買いは正、売りは負）"""
+        data = self._private_get("positionSummary", {"symbol": instrument})
+        return sum(SIGNS[p["side"]] * int(p["sumPositionSize"]) for p in data["list"])
+
+    def open_position(self, instrument: str, units: int, stop_loss_distance: float) -> None:
+        """成行で新規建てし、反対売買の逆指値決済注文で損切りを置く"""
+        sign = int(np.sign(units))
+        size = str(abs(units))
+        self._private_post(
+            "order", {"symbol": instrument, "side": SIDES[sign], "size": size, "executionType": "MARKET"}
+        )
+        # 成行の約定価格の近似として直後のレートを使う
+        entry = float(self.ticker(instrument)[ENTRY_PRICE_KEYS[sign]])
+        self._private_post(
+            "closeOrder",
+            {
+                "symbol": instrument,
+                "side": SIDES[-sign],
+                "executionType": "STOP",
+                "stopPrice": format_price(instrument, entry - sign * stop_loss_distance),
+                "size": size,
+            },
+        )
+
+    def reduce_position(self, instrument: str, units: int) -> None:
+        """成行で決済する。損切りの逆指値が決済数量を確保しているので先に取り消す"""
+        self._private_post("cancelBulkOrder", {"symbols": [instrument], "settleType": "CLOSE"})
+        self._private_post(
+            "closeOrder",
+            {
+                "symbol": instrument,
+                "side": SIDES[int(np.sign(units))],
+                "executionType": "MARKET",
+                "size": str(abs(units)),
+            },
+        )

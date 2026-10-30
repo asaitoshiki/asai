@@ -14,7 +14,7 @@ def test_to_position():
 def test_evaluate_applies_return_and_cost():
     close = pd.Series([100.0, 110.0, 99.0, 99.0])
     positions = pd.Series([1, -1, -1], index=close.index[:3])
-    result = backtest.evaluate(close, positions, spread=1.0, bars_per_year=1)
+    result = backtest.evaluate(close, positions, cost=1.0, bars_per_year=1)
 
     # 1本目: 買いで +10% から新規コスト 1/100、2本目: ドテン(2単位)で -(-10%) からコスト 2/110
     expected = [0.10 - 0.01, 0.10 - 2 / 110, 0.0]
@@ -32,7 +32,7 @@ def test_walk_forward_predicts_only_out_of_sample(ohlc):
 
 def test_run_returns_metrics(ohlc):
     result = backtest.run(
-        ohlc, horizon=4, train_size=800, test_size=200, threshold=0.55, spread=0.002, bars_per_year=6240
+        ohlc, horizon=4, train_size=800, test_size=200, threshold=0.55, cost=0.003, bars_per_year=6240
     )
     assert set(result.metrics) == {"total_return", "sharpe", "max_drawdown", "trades", "exposure", "buy_and_hold"}
     assert result.metrics["max_drawdown"] <= 0

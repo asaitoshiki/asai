@@ -5,12 +5,11 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 
 from fxbot.features import build_features
 from fxbot.model import predict_up_proba, to_position
-from fxbot.oanda import OandaClient
 
 log = logging.getLogger(__name__)
 
 # 特徴量の計算に必要な過去本数（最長の移動平均50本＋余裕）
-LOOKBACK = 300
+LOOKBACK = 120
 
 
 class LossLimitExceeded(Exception):
@@ -22,7 +21,7 @@ class Trader:
 
     def __init__(
         self,
-        client: OandaClient,
+        client,
         model: HistGradientBoostingClassifier,
         instrument: str,
         granularity: str,

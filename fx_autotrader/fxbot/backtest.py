@@ -31,12 +31,12 @@ def walk_forward_proba(df: pd.DataFrame, horizon: int, train_size: int, test_siz
     return pd.concat(chunks)
 
 
-def evaluate(close: pd.Series, positions: pd.Series, spread: float, bars_per_year: int) -> BacktestResult:
-    """t 時点の終値で決めたポジションを t→t+1 の値動きで評価する。ポジション変更ごとにスプレッドを差し引く"""
+def evaluate(close: pd.Series, positions: pd.Series, cost: float, bars_per_year: int) -> BacktestResult:
+    """t 時点の終値で決めたポジションを t→t+1 の値動きで評価する。売買1単位ごとに片道コストを差し引く"""
     next_return = close.pct_change().shift(-1).loc[positions.index]
     turnover = positions.diff().fillna(positions).abs()
-    cost = turnover * spread / close.loc[positions.index]
-    returns = (positions * next_return - cost).dropna()
+    cost_return = turnover * cost / close.loc[positions.index]
+    returns = (positions * next_return - cost_return).dropna()
     equity = (1 + returns).cumprod()
 
     metrics = {
@@ -56,8 +56,8 @@ def run(
     train_size: int,
     test_size: int,
     threshold: float,
-    spread: float,
+    cost: float,
     bars_per_year: int,
 ) -> BacktestResult:
     up_proba = walk_forward_proba(df, horizon, train_size, test_size)
-    return evaluate(df["close"], to_position(up_proba, threshold), spread, bars_per_year)
+    return evaluate(df["close"], to_position(up_proba, threshold), cost, bars_per_year)
