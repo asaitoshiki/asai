@@ -8,6 +8,10 @@ from fxbot.features import build_features, make_labels
 from fxbot.model import new_model, predict_up_proba, to_position
 
 
+# 評価開始前に最低限必要な学習データの本数
+MIN_TRAIN_ROWS = 1000
+
+
 @dataclass(frozen=True)
 class BacktestResult:
     returns: pd.Series
@@ -17,18 +21,20 @@ class BacktestResult:
 
 
 def walk_forward_proba(
-    df: pd.DataFrame, horizon: int, train_size: int, test_size: int, train_window: int
+    df: pd.DataFrame, horizon: int, eval_start: pd.Timestamp, test_size: int, train_window: int
 ) -> pd.Series:
     """学習期間をずらしながら再学習し、常に未学習の期間だけを予測する
 
-    train_size 本たまってから予測を始め、各回は直近 train_window 本で学習する（全期間より大きければ全データで学習）
+    eval_start 以降を test_size 本ずつ予測し、各回はその直前 train_window 本で学習する（全期間より大きければそれまでの全データ）
     """
     data = build_features(df).join(make_labels(df["close"], horizon)).dropna()
     X, y = data.drop(columns="label"), data["label"]
-    assert len(data) > train_size, "データが学習期間より短い"
+    first_test = data.index.searchsorted(eval_start)
+    assert first_test >= MIN_TRAIN_ROWS, "評価開始より前の学習データが少なすぎる"
+    assert first_test < len(data), "評価開始より後のデータが無い"
 
     chunks = []
-    for test_start in range(train_size, len(data), test_size):
+    for test_start in range(first_test, len(data), test_size):
         # 学習末尾 horizon 本のラベルはテスト期間の価格を参照するので除外する（リーク防止）
         train_end = test_start - horizon
         train_start = max(0, train_end - train_window)
@@ -76,7 +82,7 @@ def evaluate(close: pd.Series, positions: pd.Series, cost: pd.Series, bars_per_y
 def run(
     df: pd.DataFrame,
     horizon: int,
-    train_size: int,
+    eval_start: pd.Timestamp,
     test_size: int,
     train_window: int,
     threshold: float,
@@ -84,6 +90,6 @@ def run(
     fee: float,
     bars_per_year: int,
 ) -> BacktestResult:
-    up_proba = walk_forward_proba(df, horizon, train_size, test_size, train_window)
+    up_proba = walk_forward_proba(df, horizon, eval_start, test_size, train_window)
     positions = apply_spread_filter(to_position(up_proba, threshold), df["spread"], max_spread_ratio)
     return evaluate(df["close"], positions, unit_cost(df["spread"], fee), bars_per_year)

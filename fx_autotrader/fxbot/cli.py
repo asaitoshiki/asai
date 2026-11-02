@@ -5,8 +5,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from fxbot import backtest, model, tune
+from fxbot import backtest, data, model, tune
 from fxbot.config import BARS_PER_YEAR, load_gmo_settings, load_oanda_settings
+from fxbot.dukascopy import DukascopyData
 from fxbot.gmo import GmoClient, GmoMarketData
 from fxbot.live import Trader, run_forever
 from fxbot.oanda import OandaClient
@@ -23,6 +24,7 @@ DATA_SOURCES = {
 }
 
 
+COMBINED_CSV = Path("data/USD_JPY_H1_combined.csv")
 SPREAD_RATIO_HELP = "スプレッドが直近のふだんの値（中央値）の何倍を超えたら売買を見送るか"
 
 
@@ -38,11 +40,26 @@ def cmd_fetch(args: argparse.Namespace) -> None:
     print(f"{len(df)} 本を {args.out} に保存しました")
 
 
+def cmd_fetch_history(args: argparse.Namespace) -> None:
+    df = DukascopyData().history(
+        args.instrument, pd.Timestamp(args.start, tz="UTC"), pd.Timestamp(args.end, tz="UTC")
+    )
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(args.out)
+    print(f"{len(df)} 本を {args.out} に保存しました")
+
+
+def cmd_combine(args: argparse.Namespace) -> None:
+    df = data.combine(load_csv(args.history), load_csv(args.recent))
+    df.to_csv(args.out)
+    print(f"{df.index[0]} 〜 {df.index[-1]} の {len(df)} 本を {args.out} に保存しました")
+
+
 def cmd_backtest(args: argparse.Namespace) -> None:
     result = backtest.run(
         load_csv(args.data),
         horizon=args.horizon,
-        train_size=args.train_size,
+        eval_start=pd.Timestamp(args.eval_start, tz="UTC"),
         test_size=args.test_size,
         train_window=args.train_window,
         threshold=args.threshold,
@@ -63,7 +80,7 @@ def cmd_tune(args: argparse.Namespace) -> None:
         thresholds=args.thresholds,
         max_spread_ratios=args.max_spread_ratios,
         fee=args.fee,
-        train_size=args.train_size,
+        eval_start=pd.Timestamp(args.eval_start, tz="UTC"),
         test_size=args.test_size,
         bars_per_year=BARS_PER_YEAR[args.granularity],
         holdout_ratio=args.holdout_ratio,
@@ -112,8 +129,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     # バックテストと設定探索で共通の評価条件
     evaluation = argparse.ArgumentParser(add_help=False)
-    evaluation.add_argument("--data", type=Path, default=Path("data/USD_JPY_H1.csv"))
-    evaluation.add_argument("--train-size", type=int, default=4000, help="予測を始めるまでに必要な本数")
+    evaluation.add_argument("--data", type=Path, default=COMBINED_CSV)
+    evaluation.add_argument(
+        "--eval-start", default="2023-11-01", help="この日以降を評価する（それより前は学習にだけ使う）"
+    )
     evaluation.add_argument("--test-size", type=int, default=500, help="何本ごとに再学習するか")
     evaluation.add_argument(
         "--fee", type=float, default=0.002, help="片道の取引手数料（価格単位）。GMOコインAPIは1通貨0.002円"
@@ -125,6 +144,20 @@ def build_parser() -> argparse.ArgumentParser:
     fetch.add_argument("--out", type=Path, default=Path("data/USD_JPY_H1.csv"))
     fetch.set_defaults(func=cmd_fetch)
 
+    fh = sub.add_parser("fetch-history", help="学習用の長期データを Dukascopy から取得（1時間足）")
+    fh.add_argument("--instrument", default="USD_JPY")
+    fh.add_argument("--start", default="2010-01-01")
+    # GMOコインのデータが始まる月まで取れば十分（以降は combine で GMOコインのデータを優先する）
+    fh.add_argument("--end", default="2023-11-01")
+    fh.add_argument("--out", type=Path, default=Path("data/USD_JPY_H1_dukascopy.csv"))
+    fh.set_defaults(func=cmd_fetch_history)
+
+    cb = sub.add_parser("combine", help="長期データの後ろにブローカーのデータをつなぐ")
+    cb.add_argument("--history", type=Path, default=Path("data/USD_JPY_H1_dukascopy.csv"))
+    cb.add_argument("--recent", type=Path, default=Path("data/USD_JPY_H1.csv"))
+    cb.add_argument("--out", type=Path, default=COMBINED_CSV)
+    cb.set_defaults(func=cmd_combine)
+
     bt = sub.add_parser("backtest", parents=[common, evaluation], help="ウォークフォワードでバックテスト")
     bt.add_argument("--horizon", type=int, default=4, help="何本先の上下を予測するか")
     bt.add_argument("--train-window", type=int, default=4000, help="直近何本で学習するか（全本数以上なら全データ）")
@@ -135,7 +168,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     tn = sub.add_parser("tune", parents=[common, evaluation], help="検証期間で設定を選び、最終確認期間で評価")
     tn.add_argument("--horizons", type=int, nargs="+", default=[1, 2, 4])
-    tn.add_argument("--train-windows", type=int, nargs="+", default=[4000, 1_000_000])
+    tn.add_argument("--train-windows", type=int, nargs="+", default=[4000, 25_000, 1_000_000])
     tn.add_argument("--thresholds", type=float, nargs="+", default=[0.52, 0.55, 0.58, 0.6])
     tn.add_argument("--max-spread-ratios", type=float, nargs="+", default=[1.0, 1.5, 3.0, 1000.0])
     tn.add_argument("--holdout-ratio", type=float, default=0.4, help="予測期間のうち最終確認に取っておく割合")
@@ -143,7 +176,7 @@ def build_parser() -> argparse.ArgumentParser:
     tn.set_defaults(func=cmd_tune)
 
     tr = sub.add_parser("train", parents=[common], help="全データで学習してモデル保存")
-    tr.add_argument("--data", type=Path, default=Path("data/USD_JPY_H1.csv"))
+    tr.add_argument("--data", type=Path, default=COMBINED_CSV)
     tr.add_argument("--horizon", type=int, default=4)
     tr.add_argument("--train-window", type=int, default=4000)
     tr.add_argument("--model", type=Path, default=Path("models/model.joblib"))

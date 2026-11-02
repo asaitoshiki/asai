@@ -1,5 +1,9 @@
+import pandas as pd
+
 from fxbot import tune
 from tests.conftest import make_ohlc
+
+EVAL_START = pd.Timestamp("2024-02-15", tz="UTC")
 
 
 def test_tune_selects_on_validation_and_reports_holdout():
@@ -11,7 +15,7 @@ def test_tune_selects_on_validation_and_reports_holdout():
         thresholds=[0.52, 0.6],
         max_spread_ratios=[1.5, 1000.0],
         fee=0.002,
-        train_size=800,
+        eval_start=EVAL_START,
         test_size=200,
         bars_per_year=6240,
         holdout_ratio=0.4,
@@ -27,4 +31,4 @@ def test_tune_selects_on_validation_and_reports_holdout():
         "max_spread_ratio": float(top["max_spread_ratio"]),
     }
     assert set(result.holdout) >= {"total_return", "sharpe", "max_drawdown"}
-    assert df.index[800] < result.split < df.index[-1]
+    assert EVAL_START < result.split < df.index[-1]

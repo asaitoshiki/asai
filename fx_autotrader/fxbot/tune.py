@@ -22,7 +22,7 @@ def tune(
     thresholds: list[float],
     max_spread_ratios: list[float],
     fee: float,
-    train_size: int,
+    eval_start: pd.Timestamp,
     test_size: int,
     bars_per_year: int,
     holdout_ratio: float,
@@ -34,7 +34,7 @@ def tune(
     """
     cost = unit_cost(df["spread"], fee)
     probas = {
-        (horizon, window): walk_forward_proba(df, horizon, train_size, test_size, window)
+        (horizon, window): walk_forward_proba(df, horizon, eval_start, test_size, window)
         for horizon, window in itertools.product(horizons, train_windows)
     }
     index = next(iter(probas.values())).index

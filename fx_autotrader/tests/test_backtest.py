@@ -42,17 +42,20 @@ def test_spread_filter_follows_spread_revision():
     assert allowed.iloc[-1]
 
 
+EVAL_START = pd.Timestamp("2024-02-15", tz="UTC")  # 合成データの約1080本目
+
+
 def test_walk_forward_predicts_only_out_of_sample(ohlc):
-    proba = backtest.walk_forward_proba(ohlc, horizon=4, train_size=800, test_size=200, train_window=800)
-    # 特徴量のウォームアップ後、学習期間を超えた位置から予測が始まること
-    assert proba.index[0] > ohlc.index[800]
+    proba = backtest.walk_forward_proba(ohlc, horizon=4, eval_start=EVAL_START, test_size=200, train_window=800)
+    # 評価開始日から予測が始まること
+    assert proba.index[0] == EVAL_START
     assert proba.between(0, 1).all()
     assert proba.index.is_unique
 
 
 def test_walk_forward_expanding_window_covers_same_period(ohlc):
-    rolling = backtest.walk_forward_proba(ohlc, horizon=4, train_size=800, test_size=200, train_window=800)
-    expanding = backtest.walk_forward_proba(ohlc, horizon=4, train_size=800, test_size=200, train_window=10**6)
+    rolling = backtest.walk_forward_proba(ohlc, horizon=4, eval_start=EVAL_START, test_size=200, train_window=800)
+    expanding = backtest.walk_forward_proba(ohlc, horizon=4, eval_start=EVAL_START, test_size=200, train_window=10**6)
     assert expanding.index.equals(rolling.index)
 
 
@@ -60,7 +63,7 @@ def test_run_returns_metrics(ohlc):
     result = backtest.run(
         ohlc,
         horizon=4,
-        train_size=800,
+        eval_start=EVAL_START,
         test_size=200,
         train_window=800,
         threshold=0.55,
@@ -75,6 +78,7 @@ def test_run_returns_metrics(ohlc):
     assert (result.positions.diff().fillna(0)[wide] == 0).all()
 
 
-def test_walk_forward_requires_enough_data(ohlc):
+def test_walk_forward_requires_enough_training_data(ohlc):
+    # 評価開始より前に学習データがほとんど無い
     with pytest.raises(AssertionError):
-        backtest.walk_forward_proba(ohlc, horizon=4, train_size=5000, test_size=200, train_window=5000)
+        backtest.walk_forward_proba(ohlc, horizon=4, eval_start=ohlc.index[100], test_size=200, train_window=800)
