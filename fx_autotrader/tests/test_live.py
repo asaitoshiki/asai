@@ -10,6 +10,7 @@ class FakeClient:
     def __init__(self, candles: pd.DataFrame, nav: float = 1_000_000):
         self.candles = candles
         self.nav_value = nav
+        self.spread_value = 0.002
         self.units = 0
         self.orders: list[tuple[str, int]] = []
 
@@ -21,6 +22,9 @@ class FakeClient:
 
     def net_units(self, instrument) -> int:
         return self.units
+
+    def spread(self, instrument) -> float:
+        return self.spread_value
 
     def open_position(self, instrument, units, stop_loss_distance):
         self.orders.append(("open", units))
@@ -49,6 +53,7 @@ def make_trader(client: FakeClient, up_proba: float) -> Trader:
         granularity="H1",
         units=1000,
         threshold=0.55,
+        max_spread_ratio=1.5,
         stop_loss_distance=0.5,
         max_loss_ratio=0.05,
     )
@@ -72,6 +77,14 @@ def test_flat_prediction_only_closes():
     client.units = -1000
     make_trader(client, 0.5).step()
     assert client.orders == [("reduce", 1000)]
+
+
+def test_waits_while_spread_is_wide():
+    client = FakeClient(make_ohlc(400))
+    client.units = 1000
+    client.spread_value = 0.02
+    make_trader(client, 0.3).step()
+    assert client.orders == []
 
 
 def test_skips_same_bar():

@@ -8,7 +8,7 @@ MAX_CANDLES = 5000
 
 
 def candles_to_frame(candles: list[dict]) -> pd.DataFrame:
-    """APIレスポンスの candles 配列を OHLCV の DataFrame に変換する（確定足のみ）"""
+    """APIレスポンスの candles 配列を OHLCV＋スプレッドの DataFrame に変換する（確定足のみ）"""
     rows = [
         {
             "time": c["time"],
@@ -17,11 +17,12 @@ def candles_to_frame(candles: list[dict]) -> pd.DataFrame:
             "low": float(c["mid"]["l"]),
             "close": float(c["mid"]["c"]),
             "volume": int(c["volume"]),
+            "spread": float(c["ask"]["c"]) - float(c["bid"]["c"]),
         }
         for c in candles
         if c["complete"]
     ]
-    df = pd.DataFrame(rows, columns=["time", "open", "high", "low", "close", "volume"])
+    df = pd.DataFrame(rows, columns=["time", "open", "high", "low", "close", "volume", "spread"])
     df["time"] = pd.to_datetime(df["time"], utc=True)
     return df.set_index("time")
 
@@ -50,7 +51,8 @@ class OandaClient:
         body = self._request(
             "GET",
             f"/v3/instruments/{instrument}/candles",
-            params={"granularity": granularity, "price": "M", **params},
+            # 仲値に加えて、スプレッド計算用に BID/ASK も取得する
+            params={"granularity": granularity, "price": "MBA", **params},
         )
         return candles_to_frame(body["candles"])
 
@@ -72,6 +74,11 @@ class OandaClient:
             cursor = batch.index[-1]
         df = pd.concat(frames)
         return df[~df.index.duplicated(keep="first")]
+
+    def spread(self, instrument: str) -> float:
+        body = self._request("GET", self._account_path("/pricing"), params={"instruments": instrument})
+        price = body["prices"][0]
+        return float(price["asks"][0]["price"]) - float(price["bids"][0]["price"])
 
     def nav(self) -> float:
         body = self._request("GET", self._account_path("/summary"))

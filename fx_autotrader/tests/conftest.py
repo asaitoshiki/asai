@@ -17,6 +17,8 @@ def make_ohlc(n: int, seed: int = 0) -> pd.DataFrame:
             "low": np.minimum(open_, close) - wiggle,
             "close": close,
             "volume": rng.integers(100, 1000, n),
+            # 通常は0.2銭、日本時間の早朝（UTC 21時台）だけスプレッドが広がる
+            "spread": np.where(index.hour == 21, 0.02, 0.002),
         },
         index=index,
     )

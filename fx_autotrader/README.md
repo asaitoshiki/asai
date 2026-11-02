@@ -49,32 +49,54 @@ pip install -r requirements.txt
 python -m fxbot.cli fetch --instrument USD_JPY --granularity H1 --start 2023-10-28 --out data/USD_JPY_H1.csv
 ```
 
-GMOコインの足データは2023年10月27日以降のみ提供されています。1時間足は1日ごとに取得するため数分かかります。価格は BID を使います。
+GMOコインの足データは2023年10月27日以降のみ提供されています。1時間足は1日ごとに BID と ASK を取得するため10分ほどかかります。
+OHLC は BID と ASK の平均（仲値）、`spread` 列は各足の終値時点のスプレッド（ASK−BID）です。
 
-### 2. バックテスト
+### 2. 設定を選ぶ（tune）
 
 ```bash
-python -m fxbot.cli backtest --data data/USD_JPY_H1.csv --horizon 4 --threshold 0.55 --cost 0.003
+python -m fxbot.cli tune
 ```
 
-4000本で学習 → 次の500本を予測、を繰り返して評価します。出力の見方:
+予測期間を前半の**検証期間**と後半の**最終確認期間**（既定40%）に分け、次の組み合わせを検証期間だけで比較して
+シャープレシオが最も良い設定を選びます。選んだ設定を最終確認期間で一度だけ評価するので、
+「過去にだけ当てはまる設定」を選んでしまっていないかを確かめられます。
+
+| 項目 | 意味 | 既定の候補 |
+| --- | --- | --- |
+| `--horizons` | 何本先の上下を予測するか | 1, 2, 4 |
+| `--train-windows` | 直近何本で学習するか（全本数以上なら全データ） | 4000, 1000000 |
+| `--thresholds` | エントリーする上昇確率の閾値 | 0.52, 0.55, 0.58, 0.6 |
+| `--max-spread-ratios` | スプレッドが直近のふだんの値（中央値）の何倍を超えたら売買しないか（1000は実質制限なし） | 1.0, 1.5, 3.0, 1000 |
+
+**最終確認期間の成績がプラスで、検証期間と大きくかけ離れていないこと**が、次に進む目安です。
+
+### 3. バックテスト（選んだ設定の詳細確認）
+
+```bash
+python -m fxbot.cli backtest --horizon 2 --train-window 1000000 --threshold 0.58 --max-spread-ratio 1.5
+```
+
+出力の見方:
 
 - `total_return` / `buy_and_hold`: 戦略と単純保有の累積リターン
 - `sharpe`: 年率シャープレシオ（1以上が一つの目安）
 - `max_drawdown`: 最大下落率
 - `trades` / `exposure`: 売買回数とポジション保有率
 
-`--cost` は**片道**の売買コスト（価格単位）です。GMOコインの USD/JPY なら
-スプレッドの半分（0.2銭なら0.001）＋ API 手数料（1通貨あたり0.002円）＝ `0.003` が目安です。
-無料期間中の目安は `0.001` ですが、**無料期間後のコストで勝てるかを基準に判断してください。**
+売買コストは、各足の実際のスプレッドの半分＋手数料（`--fee`、既定はGMOコインAPIの1通貨0.002円）を片道ごとに差し引きます。
+スプレッドが直近120本の中央値の `--max-spread-ratio` 倍を超える足ではポジションを変えずに持ち越します（自動売買でも同じ規則で見送ります）。
+固定の値にしないのは、ブローカーがスプレッドを改定しても追従できるようにするためです（GMOコインのUSD/JPYは2025年秋に0.2銭→0.5銭に変わっています）。
 
-### 3. 学習してモデルを保存
+GMOコインのUSD/JPYでは、日本時間の朝5〜8時台にスプレッドが通常の数十倍（10銭以上）に広がります。
+
+### 4. 学習してモデルを保存
 
 ```bash
-python -m fxbot.cli train --data data/USD_JPY_H1.csv --horizon 4 --model models/model.joblib
+python -m fxbot.cli train --horizon 2 --train-window 1000000 --model models/model.joblib
 ```
 
-### 4. 自動売買
+### 5. 自動売買
 
 自動売買の前に、次の準備をします。
 
@@ -92,10 +114,11 @@ GMOコインの API で使えるデモ環境が無い場合は、まず**最小�
 （API の最小注文数量は主要通貨ペアで100通貨。最新の条件は公式サイトで確認してください）。
 
 ```bash
-python -m fxbot.cli live --model models/model.joblib --units 100 --threshold 0.55 --stop-loss 0.5 --max-loss 0.05
+python -m fxbot.cli live --model models/model.joblib --units 100 --threshold 0.58 --max-spread-ratio 1.5 --stop-loss 0.5 --max-loss 0.05
 ```
 
 - 確定足が更新されるたびに予測し、目標ポジション（+units / 0 / -units）に建て直します
+- その時点のスプレッドがふだんの `--max-spread-ratio` 倍を超えていれば建て直しを見送り、次の足で判断し直します
 - 新規建て直後に、`--stop-loss`（価格単位、USD/JPYで0.5なら50銭）離れた位置へ決済の逆指値を置きます
 - 決済時は、置いてある逆指値を取り消してから成行で決済します
 - 起動時の資産から `--max-loss`（既定5%）以上減ると全決済して停止します
@@ -106,7 +129,6 @@ python -m fxbot.cli live --model models/model.joblib --units 100 --threshold 0.5
 API 仕様は公開 SDK のソースと公式サンプルから実装しており、実口座ではまだ検証していません。
 最初は少額で、次の点を確認してください。
 
-- 休場日（祝日の元日など）の日付を指定した足取得がエラーにならないか
 - 決済の逆指値が無い状態で決済したとき、一括取消（`cancelBulkOrder`）がエラーにならないか
 - 逆指値の価格が想定どおり（約定価格から `--stop-loss` 離れた位置）に置かれているか
 

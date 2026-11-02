@@ -62,17 +62,26 @@ def test_history_drops_incomplete_and_duplicates():
     session = MagicMock()
     client = GmoMarketData(session=session, request_interval=0)
     now = pd.Timestamp.now(tz="UTC").floor("h")
-    bars = [kline(now - pd.Timedelta(hours=h), str(150 + h)) for h in (2, 1, 0)]
-    # 取得する日付ごとに同じ足が返っても重複は除かれること
-    session.get.return_value = ok(bars)
+    # ASK は BID より 0.004 高い。取得する日付ごとに同じ足が返っても重複は除かれること
+    closes = {"BID": 150.0, "ASK": 150.004}
+    session.get.side_effect = lambda url, params, timeout: ok(
+        [kline(now - pd.Timedelta(hours=h), str(closes[params["priceType"]])) for h in (2, 1, 0)]
+    )
 
     df = client.history("USD_JPY", "H1", now - pd.Timedelta(days=5))
 
     # 現在進行中の足（now 始まり）は未確定なので含まない
     assert df.index.tolist() == [now - pd.Timedelta(hours=2), now - pd.Timedelta(hours=1)]
-    params = session.get.call_args.kwargs["params"]
-    assert params["priceType"] == "BID"
-    assert params["interval"] == "1hour"
+    # 終値は BID と ASK の平均（仲値）
+    assert df["close"].round(6).tolist() == [150.002, 150.002]
+    assert df["spread"].round(6).tolist() == [0.004, 0.004]
+    assert {c.kwargs["params"]["interval"] for c in session.get.call_args_list} == {"1hour"}
+
+
+def test_spread_from_ticker():
+    client, session = make_client()
+    session.get.return_value = ok([{"symbol": "USD_JPY", "ask": "150.012", "bid": "150.010"}])
+    assert round(client.spread("USD_JPY"), 6) == 0.002
 
 
 def test_private_request_is_signed(monkeypatch):

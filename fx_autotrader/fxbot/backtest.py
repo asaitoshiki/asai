@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
+from fxbot.config import SPREAD_WINDOW
 from fxbot.features import build_features, make_labels
 from fxbot.model import new_model, predict_up_proba, to_position
 
@@ -15,27 +16,49 @@ class BacktestResult:
     metrics: dict
 
 
-def walk_forward_proba(df: pd.DataFrame, horizon: int, train_size: int, test_size: int) -> pd.Series:
-    """学習期間をずらしながら再学習し、常に未学習の期間だけを予測する"""
+def walk_forward_proba(
+    df: pd.DataFrame, horizon: int, train_size: int, test_size: int, train_window: int
+) -> pd.Series:
+    """学習期間をずらしながら再学習し、常に未学習の期間だけを予測する
+
+    train_size 本たまってから予測を始め、各回は直近 train_window 本で学習する（全期間より大きければ全データで学習）
+    """
     data = build_features(df).join(make_labels(df["close"], horizon)).dropna()
     X, y = data.drop(columns="label"), data["label"]
     assert len(data) > train_size, "データが学習期間より短い"
 
     chunks = []
-    for start in range(0, len(data) - train_size, test_size):
+    for test_start in range(train_size, len(data), test_size):
         # 学習末尾 horizon 本のラベルはテスト期間の価格を参照するので除外する（リーク防止）
-        train_end = start + train_size - horizon
-        test_start = start + train_size
-        model = new_model().fit(X.iloc[start:train_end], y.iloc[start:train_end])
+        train_end = test_start - horizon
+        train_start = max(0, train_end - train_window)
+        model = new_model().fit(X.iloc[train_start:train_end], y.iloc[train_start:train_end])
         chunks.append(predict_up_proba(model, X.iloc[test_start : test_start + test_size]))
     return pd.concat(chunks)
 
 
-def evaluate(close: pd.Series, positions: pd.Series, cost: float, bars_per_year: int) -> BacktestResult:
-    """t 時点の終値で決めたポジションを t→t+1 の値動きで評価する。売買1単位ごとに片道コストを差し引く"""
+def spread_allowed(spread: pd.Series, max_spread_ratio: float) -> pd.Series:
+    """各足のスプレッドが、直近 SPREAD_WINDOW 本の中央値（ふだんのスプレッド）の max_spread_ratio 倍以内か"""
+    typical = spread.rolling(SPREAD_WINDOW, min_periods=1).median()
+    return spread <= typical * max_spread_ratio
+
+
+def apply_spread_filter(positions: pd.Series, spread: pd.Series, max_spread_ratio: float) -> pd.Series:
+    """スプレッドがふだんより広い足ではポジションを変えず、直前のポジションを維持する"""
+    allowed = spread_allowed(spread, max_spread_ratio).loc[positions.index]
+    return positions.where(allowed).ffill().fillna(0).astype(int)
+
+
+def unit_cost(spread: pd.Series, fee: float) -> pd.Series:
+    """1通貨を売買するときの片道コスト。仲値基準なので片道でスプレッドの半分＋手数料"""
+    return spread / 2 + fee
+
+
+def evaluate(close: pd.Series, positions: pd.Series, cost: pd.Series, bars_per_year: int) -> BacktestResult:
+    """t 時点の終値で決めたポジションを t→t+1 の値動きで評価する。売買1単位ごとにその足の片道コストを差し引く"""
     next_return = close.pct_change().shift(-1).loc[positions.index]
     turnover = positions.diff().fillna(positions).abs()
-    cost_return = turnover * cost / close.loc[positions.index]
+    cost_return = turnover * cost.loc[positions.index] / close.loc[positions.index]
     returns = (positions * next_return - cost_return).dropna()
     equity = (1 + returns).cumprod()
 
@@ -55,9 +78,12 @@ def run(
     horizon: int,
     train_size: int,
     test_size: int,
+    train_window: int,
     threshold: float,
-    cost: float,
+    max_spread_ratio: float,
+    fee: float,
     bars_per_year: int,
 ) -> BacktestResult:
-    up_proba = walk_forward_proba(df, horizon, train_size, test_size)
-    return evaluate(df["close"], to_position(up_proba, threshold), cost, bars_per_year)
+    up_proba = walk_forward_proba(df, horizon, train_size, test_size, train_window)
+    positions = apply_spread_filter(to_position(up_proba, threshold), df["spread"], max_spread_ratio)
+    return evaluate(df["close"], positions, unit_cost(df["spread"], fee), bars_per_year)

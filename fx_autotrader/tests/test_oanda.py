@@ -14,6 +14,8 @@ def candle(time: str, close: str, complete: bool = True) -> dict:
         "complete": complete,
         "volume": 10,
         "mid": {"o": "150.0", "h": "151.0", "l": "149.0", "c": close},
+        "bid": {"o": "150.0", "h": "151.0", "l": "149.0", "c": "150.000"},
+        "ask": {"o": "150.0", "h": "151.0", "l": "149.0", "c": "150.008"},
     }
 
 
@@ -31,6 +33,15 @@ def test_candles_to_frame_drops_incomplete():
     assert len(df) == 1
     assert df["close"].iloc[0] == 150.5
     assert df.index[0] == pd.Timestamp("2024-01-01T00:00:00Z")
+    assert round(df["spread"].iloc[0], 6) == 0.008
+
+
+def test_spread_from_pricing():
+    client, session = client_returning(
+        {"prices": [{"bids": [{"price": "150.010"}], "asks": [{"price": "150.018"}]}]}
+    )
+    assert round(client.spread("USD_JPY"), 6) == 0.008
+    assert session.request.call_args.kwargs["params"] == {"instruments": "USD_JPY"}
 
 
 def test_net_units_sums_long_and_short():

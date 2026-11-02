@@ -77,7 +77,7 @@ def _unwrap(res: requests.Response):
 
 
 class GmoMarketData:
-    """GMOコイン「外国為替FX」の Public API（APIキー不要）。価格は BID を使う"""
+    """GMOコイン「外国為替FX」の Public API（APIキー不要）。OHLC は仲値、spread は足の終値時点の ASK-BID"""
 
     def __init__(self, session: requests.Session | None = None, request_interval: float = 0.2):
         self.session = session or _retrying_session()
@@ -87,12 +87,25 @@ class GmoMarketData:
     def _public_get(self, path: str, params: dict | None = None):
         return _unwrap(self.session.get(f"{PUBLIC_URL}/v1/{path}", params=params, timeout=30))
 
-    def klines(self, instrument: str, granularity: str, date_key: str) -> pd.DataFrame:
+    def klines(self, instrument: str, granularity: str, date_key: str, price_type: str) -> pd.DataFrame:
         data = self._public_get(
             "klines",
-            {"symbol": instrument, "priceType": "BID", "interval": INTERVALS[granularity], "date": date_key},
+            {"symbol": instrument, "priceType": price_type, "interval": INTERVALS[granularity], "date": date_key},
         )
         return klines_to_frame(data)
+
+    def _period(self, instrument: str, granularity: str, date_key: str) -> pd.DataFrame:
+        """1期間分の仲値の足に、終値時点のスプレッドを付ける
+
+        BID だけだとスプレッドが広がる時間帯（日本時間の早朝など）に見かけ上の値下がりが生じ、
+        モデルがそれを学習してしまうため、BID と ASK の平均（仲値）を使う
+        """
+        bid = self.klines(instrument, granularity, date_key, "BID")
+        time.sleep(self.request_interval)
+        ask = self.klines(instrument, granularity, date_key, "ASK")
+        time.sleep(self.request_interval)
+        mid = (bid + ask) / 2
+        return mid.assign(spread=ask["close"] - bid["close"]).dropna()
 
     def history(self, instrument: str, granularity: str, start: pd.Timestamp) -> pd.DataFrame:
         """start から現在までの確定足を取得する"""
@@ -101,11 +114,7 @@ class GmoMarketData:
         # 404 になる。遅い方の7時（＋余裕5分）で区切った取引日までを取得し、開始側は前日分から取って後で落とす
         trading_today = now - pd.Timedelta(hours=7, minutes=5)
         keys = PERIOD_KEYS[granularity]((start - pd.Timedelta(days=1)).tz_convert(JST), trading_today)
-        frames = []
-        for key in keys:
-            frames.append(self.klines(instrument, granularity, key))
-            time.sleep(self.request_interval)
-        df = pd.concat(frames).sort_index()
+        df = pd.concat([self._period(instrument, granularity, key) for key in keys]).sort_index()
         df = df[~df.index.duplicated(keep="first")]
         # 終了時刻が現在より後の足は未確定なので除く
         complete = df.index + pd.Timedelta(seconds=BAR_SECONDS[granularity]) <= now
@@ -118,6 +127,10 @@ class GmoMarketData:
 
     def ticker(self, instrument: str) -> dict:
         return next(t for t in self._public_get("ticker") if t["symbol"] == instrument)
+
+    def spread(self, instrument: str) -> float:
+        quote = self.ticker(instrument)
+        return float(quote["ask"]) - float(quote["bid"])
 
 
 class GmoClient(GmoMarketData):
