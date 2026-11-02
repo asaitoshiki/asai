@@ -20,6 +20,7 @@ def test_tune_selects_on_validation_and_reports_holdout():
         bars_per_year=6240,
         holdout_ratio=0.4,
         min_trades=1,
+        pool=[make_ohlc(2500, seed=1)],
     )
     assert len(result.table) == 2 * 2 * 2 * 2
     # 選ばれた設定は検証期間の表で一番良い（売買回数の条件を満たす）行と一致すること

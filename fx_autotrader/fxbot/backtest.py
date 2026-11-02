@@ -20,15 +20,26 @@ class BacktestResult:
     metrics: dict
 
 
+def labeled(df: pd.DataFrame, horizon: int) -> pd.DataFrame:
+    """特徴量とラベルを並べ、どちらかが欠ける行（序盤のウォームアップと末尾）を除く"""
+    return build_features(df).join(make_labels(df["close"], horizon)).dropna()
+
+
 def walk_forward_proba(
-    df: pd.DataFrame, horizon: int, eval_start: pd.Timestamp, test_size: int, train_window: int
+    df: pd.DataFrame,
+    horizon: int,
+    eval_start: pd.Timestamp,
+    test_size: int,
+    train_window: int,
+    pool: list[pd.DataFrame],
 ) -> pd.Series:
     """学習期間をずらしながら再学習し、常に未学習の期間だけを予測する
 
-    eval_start 以降を test_size 本ずつ予測し、各回はその直前 train_window 本で学習する（全期間より大きければそれまでの全データ）
+    eval_start 以降を test_size 本ずつ予測し、各回はその直前 train_window 本で学習する（全期間より大きければそれまでの全データ）。
+    pool の他の通貨ペアも、同じ期間の行を学習データに加える（特徴量は比率なので通貨ペアをまたいで使える）
     """
-    data = build_features(df).join(make_labels(df["close"], horizon)).dropna()
-    X, y = data.drop(columns="label"), data["label"]
+    data = labeled(df, horizon)
+    pooled = pd.concat([data.iloc[:0], *(labeled(p, horizon) for p in pool)])
     first_test = data.index.searchsorted(eval_start)
     assert first_test >= MIN_TRAIN_ROWS, "評価開始より前の学習データが少なすぎる"
     assert first_test < len(data), "評価開始より後のデータが無い"
@@ -37,9 +48,12 @@ def walk_forward_proba(
     for test_start in range(first_test, len(data), test_size):
         # 学習末尾 horizon 本のラベルはテスト期間の価格を参照するので除外する（リーク防止）
         train_end = test_start - horizon
-        train_start = max(0, train_end - train_window)
-        model = new_model().fit(X.iloc[train_start:train_end], y.iloc[train_start:train_end])
-        chunks.append(predict_up_proba(model, X.iloc[test_start : test_start + test_size]))
+        own = data.iloc[max(0, train_end - train_window) : train_end]
+        # 他の通貨ペアも同じ時刻の範囲に限ることで、テスト期間の価格をラベルに含めない
+        others = pooled[(pooled.index >= own.index[0]) & (pooled.index <= own.index[-1])]
+        train = pd.concat([own, others])
+        model = new_model().fit(train.drop(columns="label"), train["label"])
+        chunks.append(predict_up_proba(model, data.iloc[test_start : test_start + test_size].drop(columns="label")))
     return pd.concat(chunks)
 
 
@@ -89,7 +103,8 @@ def run(
     max_spread_ratio: float,
     fee: float,
     bars_per_year: int,
+    pool: list[pd.DataFrame],
 ) -> BacktestResult:
-    up_proba = walk_forward_proba(df, horizon, eval_start, test_size, train_window)
+    up_proba = walk_forward_proba(df, horizon, eval_start, test_size, train_window, pool)
     positions = apply_spread_filter(to_position(up_proba, threshold), df["spread"], max_spread_ratio)
     return evaluate(df["close"], positions, unit_cost(df["spread"], fee), bars_per_year)

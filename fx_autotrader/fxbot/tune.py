@@ -27,6 +27,7 @@ def tune(
     bars_per_year: int,
     holdout_ratio: float,
     min_trades: int,
+    pool: list[pd.DataFrame],
 ) -> TuneResult:
     """予測期間の前半（検証期間）だけで設定を選び、選んだ設定を後半（最終確認期間）で一度だけ評価する
 
@@ -34,7 +35,7 @@ def tune(
     """
     cost = unit_cost(df["spread"], fee)
     probas = {
-        (horizon, window): walk_forward_proba(df, horizon, eval_start, test_size, window)
+        (horizon, window): walk_forward_proba(df, horizon, eval_start, test_size, window, pool)
         for horizon, window in itertools.product(horizons, train_windows)
     }
     index = next(iter(probas.values())).index

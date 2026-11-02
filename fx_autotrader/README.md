@@ -52,21 +52,19 @@ python -m fxbot.cli fetch --instrument USD_JPY --granularity H1 --start 2023-10-
 GMOコインの足データは2023年10月27日以降のみ提供されています。1時間足は1日ごとに BID と ASK を取得するため10分ほどかかります。
 OHLC は BID と ASK の平均（仲値）、`spread` 列は各足の終値時点のスプレッド（ASK−BID）です。
 
-### 1-2. 学習用の長期データを取得してつなぐ
+### 1-2. 他の通貨ペアも取得する（学習データを増やす）
 
-GMOコインのデータは約3年分しかないため、Dukascopy（スイスの銀行）が公開している過去データ（2010年〜）を
-**学習用に**追加します。評価（バックテスト・設定選び）は GMOコインのデータの期間だけで、GMOコインの実スプレッドを使って行います。
-
-```bash
-python -m fxbot.cli fetch-history --start 2010-01-01 --end 2023-11-01
-```
+GMOコインのデータは約3年分しかないため、他の通貨ペアのデータも**学習にだけ**加えられます
+（特徴量は比率や変化率なので、通貨ペアをまたいで使えます）。評価は `--data` の通貨ペアだけで行います。
 
 ```bash
-python -m fxbot.cli combine
+python -m fxbot.cli fetch --instrument EUR_JPY --out data/EUR_JPY_H1.csv
 ```
 
-`data/USD_JPY_H1_combined.csv` に、Dukascopy の長期データの後ろに GMOコインのデータをつないだものができます。
-以降のコマンドはこのファイルを使い、`--eval-start`（既定 2023-11-01）以降を評価、それより前は学習にだけ使います。
+`backtest` / `tune` / `train` に `--pool data/EUR_JPY_H1.csv data/GBP_JPY_H1.csv ...` を付けると、
+各学習時点と同じ期間の他ペアのデータが学習に加わります。`--eval-start`（既定 2024-06-26）以降を評価し、それより前は学習にだけ使います。
+
+USD/JPY では、EUR/JPY・GBP/JPY・AUD/JPY・EUR/USD を加えても最終確認期間の成績は改善しませんでした（後述の検証結果）。
 
 ### 2. 設定を選ぶ（tune）
 
@@ -81,7 +79,7 @@ python -m fxbot.cli tune
 | 項目 | 意味 | 既定の候補 |
 | --- | --- | --- |
 | `--horizons` | 何本先の上下を予測するか | 1, 2, 4 |
-| `--train-windows` | 直近何本で学習するか（全本数以上なら全データ） | 4000, 25000, 1000000 |
+| `--train-windows` | 直近何本で学習するか（全本数以上なら全データ） | 4000, 1000000 |
 | `--thresholds` | エントリーする上昇確率の閾値 | 0.52, 0.55, 0.58, 0.6 |
 | `--max-spread-ratios` | スプレッドが直近のふだんの値（中央値）の何倍を超えたら売買しないか（1000は実質制限なし） | 1.0, 1.5, 3.0, 1000 |
 
@@ -90,7 +88,7 @@ python -m fxbot.cli tune
 ### 3. バックテスト（選んだ設定の詳細確認）
 
 ```bash
-python -m fxbot.cli backtest --horizon 2 --train-window 1000000 --threshold 0.58 --max-spread-ratio 1.5
+python -m fxbot.cli backtest
 ```
 
 出力の見方:
@@ -106,10 +104,26 @@ python -m fxbot.cli backtest --horizon 2 --train-window 1000000 --threshold 0.58
 
 GMOコインのUSD/JPYでは、日本時間の朝5〜8時台にスプレッドが通常の数十倍（10銭以上）に広がります。
 
+#### 検証結果（USD/JPY 1時間足、2026年11月時点）
+
+既定値（4本先を予測・全データで学習・閾値0.52・スプレッドがふだん以下のときだけ売買）は、`tune` で検証期間
+（2024-06〜2025-11）から選んだ設定です。設定選びに使っていない最終確認期間（2025-11〜2026-11）の成績は次のとおりでした。
+
+| 条件 | 最終確認期間のリターン |
+| --- | --- |
+| 既定（再学習500本ごと） | +13.0%（シャープレシオ 1.93、最大下落 −4.0%） |
+| 再学習間隔・評価開始日を変えた4通り | +8.9% 〜 +13.4% |
+| 片道コストを0.3銭上乗せ | +10.5% |
+| 他の通貨ペアを学習に追加 | +3.3% 〜 +7.5% |
+
+2024-06〜2026-11 の全期間では +18.9%（プラスの月 18/30）。2024年7月の急な円高では1か月で −7.3%、
+検証期間の最大下落は −12.1% でした（いずれも証拠金ではなく取引金額に対する割合）。
+最終確認期間は約1年分しかなく、32通りの設定から選んでいるため、**将来も同じように勝てる保証はありません。**
+
 ### 4. 学習してモデルを保存
 
 ```bash
-python -m fxbot.cli train --horizon 2 --train-window 1000000 --model models/model.joblib
+python -m fxbot.cli train --model models/model.joblib
 ```
 
 ### 5. 自動売買
@@ -130,8 +144,12 @@ GMOコインの API で使えるデモ環境が無い場合は、まず**最小�
 （API の最小注文数量は主要通貨ペアで100通貨。最新の条件は公式サイトで確認してください）。
 
 ```bash
-python -m fxbot.cli live --model models/model.joblib --units 100 --threshold 0.58 --max-spread-ratio 1.5 --stop-loss 0.5 --max-loss 0.05
+python -m fxbot.cli live --model models/model.joblib --units 100 --stop-loss 0.5 --max-loss 0.25
 ```
+
+`--max-loss` は想定される下落に合わせて決めます。例えば資金1万円・100通貨（取引金額 約1.6万円）なら、
+検証期間の最大下落 −12% は約 −1,900円（資金の約19%）に当たるため、既定の5%ではすぐ停止してしまいます。
+なお、バックテストには損切り注文（`--stop-loss`）の効果は入っていません。
 
 - 確定足が更新されるたびに予測し、目標ポジション（+units / 0 / -units）に建て直します
 - その時点のスプレッドがふだんの `--max-spread-ratio` 倍を超えていれば建て直しを見送り、次の足で判断し直します

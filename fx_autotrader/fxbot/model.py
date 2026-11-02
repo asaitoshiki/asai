@@ -19,13 +19,14 @@ def new_model() -> HistGradientBoostingClassifier:
     )
 
 
-def training_set(df: pd.DataFrame, horizon: int) -> tuple[pd.DataFrame, pd.Series]:
-    data = build_features(df).join(make_labels(df["close"], horizon)).dropna()
+def training_set(frames: list[pd.DataFrame], horizon: int) -> tuple[pd.DataFrame, pd.Series]:
+    data = pd.concat([build_features(df).join(make_labels(df["close"], horizon)).dropna() for df in frames])
     return data.drop(columns="label"), data["label"]
 
 
-def train(df: pd.DataFrame, horizon: int) -> HistGradientBoostingClassifier:
-    X, y = training_set(df, horizon)
+def train(frames: list[pd.DataFrame], horizon: int) -> HistGradientBoostingClassifier:
+    """売買する通貨ペアと、学習に加える他の通貨ペアのデータをまとめて学習する"""
+    X, y = training_set(frames, horizon)
     return new_model().fit(X, y)
 
 
