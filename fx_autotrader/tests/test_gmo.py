@@ -40,10 +40,10 @@ def test_klines_to_frame():
     assert df["close"].iloc[0] == 150.5
 
 
-def test_daily_keys_skip_sunday():
+def test_daily_keys_skip_weekend():
     start = pd.Timestamp("2024-01-05", tz=gmo.JST)  # 金曜
     end = pd.Timestamp("2024-01-08", tz=gmo.JST)  # 月曜
-    assert gmo.PERIOD_KEYS["H1"](start, end) == ["20240105", "20240106", "20240108"]
+    assert gmo.PERIOD_KEYS["H1"](start, end) == ["20240105", "20240108"]
 
 
 def test_yearly_keys():
@@ -66,7 +66,7 @@ def test_history_drops_incomplete_and_duplicates():
     # 取得する日付ごとに同じ足が返っても重複は除かれること
     session.get.return_value = ok(bars)
 
-    df = client.history("USD_JPY", "H1", now - pd.Timedelta(days=1))
+    df = client.history("USD_JPY", "H1", now - pd.Timedelta(days=5))
 
     # 現在進行中の足（now 始まり）は未確定なので含まない
     assert df.index.tolist() == [now - pd.Timedelta(hours=2), now - pd.Timedelta(hours=1)]

@@ -81,7 +81,8 @@ def build_parser() -> argparse.ArgumentParser:
     common.add_argument("--granularity", default="H1", choices=list(BARS_PER_YEAR))
 
     fetch = sub.add_parser("fetch", parents=[common], help="過去データを取得してCSV保存")
-    fetch.add_argument("--start", default="2022-01-01")
+    # GMOコインの足データは 2023-10-27 以降のみ提供（取得は開始日の前日分からなので翌日を既定にする）
+    fetch.add_argument("--start", default="2023-10-28")
     fetch.add_argument("--out", type=Path, default=Path("data/USD_JPY_H1.csv"))
     fetch.set_defaults(func=cmd_fetch)
 

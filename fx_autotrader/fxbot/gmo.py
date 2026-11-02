@@ -6,6 +6,8 @@ import time
 import numpy as np
 import pandas as pd
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from fxbot.config import BAR_SECONDS, GmoSettings
 
@@ -27,9 +29,9 @@ class GmoApiError(Exception):
 
 
 def _daily_keys(start: pd.Timestamp, end: pd.Timestamp) -> list[str]:
-    # 日曜（日本時間）は終日休場でデータが無いので除く
+    # 取引日は平日のみ（土曜早朝の足は金曜の取引日に含まれる）
     days = pd.date_range(start.normalize(), end.normalize(), freq="D")
-    return [d.strftime("%Y%m%d") for d in days if d.day_of_week != 6]
+    return [d.strftime("%Y%m%d") for d in days if d.day_of_week < 5]
 
 
 def _yearly_keys(start: pd.Timestamp, end: pd.Timestamp) -> list[str]:
@@ -58,6 +60,14 @@ def format_price(instrument: str, price: float) -> str:
     return f"{price:.{decimals}f}"
 
 
+def _retrying_session() -> requests.Session:
+    """一時的な通信エラーやサーバーエラーのとき GET だけ再試行するセッション（注文の二重発注を避けるため POST は再試行しない）"""
+    retry = Retry(total=5, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504], allowed_methods=["GET"])
+    session = requests.Session()
+    session.mount("https://", HTTPAdapter(max_retries=retry))
+    return session
+
+
 def _unwrap(res: requests.Response):
     res.raise_for_status()
     body = res.json()
@@ -70,7 +80,7 @@ class GmoMarketData:
     """GMOコイン「外国為替FX」の Public API（APIキー不要）。価格は BID を使う"""
 
     def __init__(self, session: requests.Session | None = None, request_interval: float = 0.2):
-        self.session = session or requests.Session()
+        self.session = session or _retrying_session()
         # Public API の流量制限に掛からないよう連続取得時に空ける秒数
         self.request_interval = request_interval
 
@@ -87,8 +97,10 @@ class GmoMarketData:
     def history(self, instrument: str, granularity: str, start: pd.Timestamp) -> pd.DataFrame:
         """start から現在までの確定足を取得する"""
         now = pd.Timestamp.now(tz=JST)
-        # 日付の区切りが日本時間基準なので、前日分から取得して範囲外は後で落とす
-        keys = PERIOD_KEYS[granularity]((start - pd.Timedelta(days=1)).tz_convert(JST), now)
+        # 取引日は日本時間の朝6時（米国夏時間）/7時（冬時間）で切り替わり、まだ始まっていない日付を指定すると
+        # 404 になる。遅い方の7時（＋余裕5分）で区切った取引日までを取得し、開始側は前日分から取って後で落とす
+        trading_today = now - pd.Timedelta(hours=7, minutes=5)
+        keys = PERIOD_KEYS[granularity]((start - pd.Timedelta(days=1)).tz_convert(JST), trading_today)
         frames = []
         for key in keys:
             frames.append(self.klines(instrument, granularity, key))

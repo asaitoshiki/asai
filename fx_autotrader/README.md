@@ -46,10 +46,10 @@ pip install -r requirements.txt
 ### 1. 過去データを取得
 
 ```bash
-python -m fxbot.cli fetch --instrument USD_JPY --granularity H1 --start 2023-01-01 --out data/USD_JPY_H1.csv
+python -m fxbot.cli fetch --instrument USD_JPY --granularity H1 --start 2023-10-28 --out data/USD_JPY_H1.csv
 ```
 
-GMOコインの1時間足は1日ごとに取得するため、数年分だと数分かかります。価格は BID を使います。
+GMOコインの足データは2023年10月27日以降のみ提供されています。1時間足は1日ごとに取得するため数分かかります。価格は BID を使います。
 
 ### 2. バックテスト
 
