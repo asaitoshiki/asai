@@ -29,10 +29,7 @@
 ## セットアップ（GMOコイン）
 
 1. GMOコインで口座開設し、**外国為替FX口座**も開設する
-2. 会員ページの「API」から外国為替FXの API キーを作成する
-   - 権限は「口座情報の取得」と「注文」を有効にする
-   - API キー作成から30日間は API 経由の取引手数料が無料
-3. 依存パッケージをインストール
+2. 依存パッケージをインストール
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
@@ -42,11 +39,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. 認証情報を環境変数に設定（`.env.example` を参照）
-
-```bash
-export GMO_API_KEY=xxxx GMO_API_SECRET=xxxx
-```
+データ取得・バックテスト・学習には API キーは不要です。API キーは自動売買（`live`）を始める直前に作ります（後述）。
 
 ## 使い方
 
@@ -82,6 +75,18 @@ python -m fxbot.cli train --data data/USD_JPY_H1.csv --horizon 4 --model models/
 ```
 
 ### 4. 自動売買
+
+自動売買の前に、次の準備をします。
+
+1. 暗号資産口座へ日本円を入金し、会員ページ・アプリの【振替】で**外国為替FX口座へ振替**する
+2. 会員ページの「API」から外国為替FXの API キーを作成する
+   - 権限は「口座情報の取得」と「注文」を有効にする
+   - 初めて API キーを作成してから30日間は API 経由の取引手数料が無料なので、使い始める直前に作るのがおすすめ
+3. 認証情報を環境変数に設定（`.env.example` を参照）
+
+```bash
+export GMO_API_KEY=xxxx GMO_API_SECRET=xxxx
+```
 
 GMOコインの API で使えるデモ環境が無い場合は、まず**最小に近い数量で本番口座**を使って動作確認します
 （API の最小注文数量は主要通貨ペアで100通貨。最新の条件は公式サイトで確認してください）。

@@ -58,47 +58,24 @@ def format_price(instrument: str, price: float) -> str:
     return f"{price:.{decimals}f}"
 
 
-class GmoClient:
-    """GMOコイン「外国為替FX」API クライアント。価格は BID を使う"""
+def _unwrap(res: requests.Response):
+    res.raise_for_status()
+    body = res.json()
+    if body["status"] != 0:
+        raise GmoApiError(body["messages"])
+    return body["data"]
 
-    def __init__(
-        self, settings: GmoSettings, session: requests.Session | None = None, request_interval: float = 0.2
-    ):
-        self.settings = settings
+
+class GmoMarketData:
+    """GMOコイン「外国為替FX」の Public API（APIキー不要）。価格は BID を使う"""
+
+    def __init__(self, session: requests.Session | None = None, request_interval: float = 0.2):
         self.session = session or requests.Session()
         # Public API の流量制限に掛からないよう連続取得時に空ける秒数
         self.request_interval = request_interval
 
-    @staticmethod
-    def _unwrap(res: requests.Response):
-        res.raise_for_status()
-        body = res.json()
-        if body["status"] != 0:
-            raise GmoApiError(body["messages"])
-        return body["data"]
-
-    def _signed_headers(self, method: str, path: str, payload: str) -> dict:
-        # 署名対象は「タイムスタンプ + メソッド + パス（クエリ除く） + ボディ」
-        timestamp = str(int(time.time() * 1000))
-        text = f"{timestamp}{method}/v1/{path}{payload}"
-        sign = hmac.new(self.settings.api_secret.encode(), text.encode(), hashlib.sha256).hexdigest()
-        return {"API-KEY": self.settings.api_key, "API-TIMESTAMP": timestamp, "API-SIGN": sign}
-
     def _public_get(self, path: str, params: dict | None = None):
-        return self._unwrap(self.session.get(f"{PUBLIC_URL}/v1/{path}", params=params, timeout=30))
-
-    def _private_get(self, path: str, params: dict | None = None):
-        headers = self._signed_headers("GET", path, "")
-        return self._unwrap(
-            self.session.get(f"{PRIVATE_URL}/v1/{path}", params=params, headers=headers, timeout=30)
-        )
-
-    def _private_post(self, path: str, body: dict):
-        payload = json.dumps(body)
-        headers = {**self._signed_headers("POST", path, payload), "Content-Type": "application/json"}
-        return self._unwrap(
-            self.session.post(f"{PRIVATE_URL}/v1/{path}", data=payload, headers=headers, timeout=30)
-        )
+        return _unwrap(self.session.get(f"{PUBLIC_URL}/v1/{path}", params=params, timeout=30))
 
     def klines(self, instrument: str, granularity: str, date_key: str) -> pd.DataFrame:
         data = self._public_get(
@@ -129,6 +106,32 @@ class GmoClient:
 
     def ticker(self, instrument: str) -> dict:
         return next(t for t in self._public_get("ticker") if t["symbol"] == instrument)
+
+
+class GmoClient(GmoMarketData):
+    """GMOコイン「外国為替FX」の Private API を含むクライアント（資産・建玉・注文）"""
+
+    def __init__(
+        self, settings: GmoSettings, session: requests.Session | None = None, request_interval: float = 0.2
+    ):
+        super().__init__(session, request_interval)
+        self.settings = settings
+
+    def _signed_headers(self, method: str, path: str, payload: str) -> dict:
+        # 署名対象は「タイムスタンプ + メソッド + パス（クエリ除く） + ボディ」
+        timestamp = str(int(time.time() * 1000))
+        text = f"{timestamp}{method}/v1/{path}{payload}"
+        sign = hmac.new(self.settings.api_secret.encode(), text.encode(), hashlib.sha256).hexdigest()
+        return {"API-KEY": self.settings.api_key, "API-TIMESTAMP": timestamp, "API-SIGN": sign}
+
+    def _private_get(self, path: str, params: dict | None = None):
+        headers = self._signed_headers("GET", path, "")
+        return _unwrap(self.session.get(f"{PRIVATE_URL}/v1/{path}", params=params, headers=headers, timeout=30))
+
+    def _private_post(self, path: str, body: dict):
+        payload = json.dumps(body)
+        headers = {**self._signed_headers("POST", path, payload), "Content-Type": "application/json"}
+        return _unwrap(self.session.post(f"{PRIVATE_URL}/v1/{path}", data=payload, headers=headers, timeout=30))
 
     def nav(self) -> float:
         """時価評価総額（評価損益込みの資産）"""

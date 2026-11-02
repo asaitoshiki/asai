@@ -8,7 +8,7 @@ import pytest
 
 from fxbot import gmo
 from fxbot.config import GmoSettings
-from fxbot.gmo import GmoApiError, GmoClient, format_price, klines_to_frame
+from fxbot.gmo import GmoApiError, GmoClient, GmoMarketData, format_price, klines_to_frame
 
 SETTINGS = GmoSettings(api_key="key", api_secret="secret")
 
@@ -58,7 +58,9 @@ def test_format_price():
 
 
 def test_history_drops_incomplete_and_duplicates():
-    client, session = make_client()
+    # 過去データの取得は APIキー無しでできること
+    session = MagicMock()
+    client = GmoMarketData(session=session, request_interval=0)
     now = pd.Timestamp.now(tz="UTC").floor("h")
     bars = [kline(now - pd.Timedelta(hours=h), str(150 + h)) for h in (2, 1, 0)]
     # 取得する日付ごとに同じ足が返っても重複は除かれること

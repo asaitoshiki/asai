@@ -7,13 +7,18 @@ import pandas as pd
 
 from fxbot import backtest, model
 from fxbot.config import BARS_PER_YEAR, load_gmo_settings, load_oanda_settings
-from fxbot.gmo import GmoClient
+from fxbot.gmo import GmoClient, GmoMarketData
 from fxbot.live import Trader, run_forever
 from fxbot.oanda import OandaClient
 
 # 接続先ブローカーごとのクライアント生成（認証情報はそれぞれの環境変数から読む）
 CLIENTS = {
     "gmo": lambda: GmoClient(load_gmo_settings()),
+    "oanda": lambda: OandaClient(load_oanda_settings()),
+}
+# 過去データの取得元。GMOコインは Public API なので APIキー不要
+DATA_SOURCES = {
+    "gmo": GmoMarketData,
     "oanda": lambda: OandaClient(load_oanda_settings()),
 }
 
@@ -23,8 +28,8 @@ def load_csv(path: Path) -> pd.DataFrame:
 
 
 def cmd_fetch(args: argparse.Namespace) -> None:
-    client = CLIENTS[args.broker]()
-    df = client.history(args.instrument, args.granularity, pd.Timestamp(args.start, tz="UTC"))
+    source = DATA_SOURCES[args.broker]()
+    df = source.history(args.instrument, args.granularity, pd.Timestamp(args.start, tz="UTC"))
     args.out.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.out)
     print(f"{len(df)} 本を {args.out} に保存しました")
