@@ -5,11 +5,12 @@ from pathlib import Path
 
 import pandas as pd
 
-from fxbot import backtest, model, tune
+from fxbot import backtest, data, model, tune
 from fxbot.config import BARS_PER_YEAR, load_gmo_settings, load_oanda_settings
 from fxbot.gmo import GmoClient, GmoMarketData
 from fxbot.live import Trader, run_forever
 from fxbot.oanda import OandaClient
+from fxbot.twelvedata import TwelveDataHistory
 
 # 接続先ブローカーごとのクライアント生成（認証情報はそれぞれの環境変数から読む）
 CLIENTS = {
@@ -37,6 +38,21 @@ def cmd_fetch(args: argparse.Namespace) -> None:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.out)
     print(f"{len(df)} 本を {args.out} に保存しました")
+
+
+def cmd_fetch_history(args: argparse.Namespace) -> None:
+    df = TwelveDataHistory().history(
+        args.instrument, pd.Timestamp(args.start, tz="UTC"), pd.Timestamp(args.end, tz="UTC")
+    )
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(args.out)
+    print(f"{len(df)} 本を {args.out} に保存しました")
+
+
+def cmd_combine(args: argparse.Namespace) -> None:
+    df = data.combine(load_csv(args.history), load_csv(args.recent), args.spread_days)
+    df.to_csv(args.out)
+    print(f"{df.index[0]} 〜 {df.index[-1]} の {len(df)} 本を {args.out} に保存しました")
 
 
 def cmd_backtest(args: argparse.Namespace) -> None:
@@ -132,6 +148,23 @@ def build_parser() -> argparse.ArgumentParser:
     fetch.add_argument("--start", default="2023-10-28")
     fetch.add_argument("--out", type=Path, default=Path("data/USD_JPY_H1.csv"))
     fetch.set_defaults(func=cmd_fetch)
+
+    fh = sub.add_parser("fetch-history", help="長期の1時間足を Twelve Data から取得（APIキーは環境のネットワーク設定で付与）")
+    fh.add_argument("--instrument", default="USD_JPY")
+    # Twelve Data の USD/JPY 1時間足は 2020-01-29 から。GMOコインのデータが始まるところまで取れば十分
+    fh.add_argument("--start", default="2020-01-29")
+    fh.add_argument("--end", default="2023-10-30")
+    fh.add_argument("--out", type=Path, default=Path("data/USD_JPY_H1_twelvedata.csv"))
+    fh.set_defaults(func=cmd_fetch_history)
+
+    cb = sub.add_parser("combine", help="長期データの後ろにブローカーのデータをつなぐ")
+    cb.add_argument("--history", type=Path, default=Path("data/USD_JPY_H1_twelvedata.csv"))
+    cb.add_argument("--recent", type=Path, default=Path("data/USD_JPY_H1.csv"))
+    cb.add_argument(
+        "--spread-days", type=int, default=180, help="長期データの期間に当てはめるスプレッドを、直近何日分から求めるか"
+    )
+    cb.add_argument("--out", type=Path, default=Path("data/USD_JPY_H1_combined.csv"))
+    cb.set_defaults(func=cmd_combine)
 
     bt = sub.add_parser("backtest", parents=[common, evaluation], help="ウォークフォワードでバックテスト")
     # 既定値は tune で検証期間から選び、最終確認期間・再学習間隔・開始日の違いでも成績が崩れなかった設定
