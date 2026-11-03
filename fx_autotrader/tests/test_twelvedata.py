@@ -23,10 +23,11 @@ def test_history_splits_into_chunks_and_trims():
 
     session.get.side_effect = respond
     start, end = pd.Timestamp("2020-01-01", tz="UTC"), pd.Timestamp("2021-01-01", tz="UTC")
-    df = TwelveDataHistory(session=session, request_interval=0).history("USD_JPY", start, end)
+    df = TwelveDataHistory(session=session, request_interval=0).history("USD_JPY", "H1", start, end)
 
     params = [c.kwargs["params"] for c in session.get.call_args_list]
     assert [p["symbol"] for p in params] == ["USD/JPY"] * 3
+    assert {p["interval"] for p in params} == {"1h"}
     assert params[0]["start_date"] == "2020-01-01 00:00:00"
     assert params[-1]["end_date"] == "2021-01-01 00:00:00"
     # 重複は除かれ、end ちょうどの足は含まない
@@ -39,5 +40,18 @@ def test_error_response_raises():
     session.get.return_value.json.return_value = {"status": "error", "code": 400, "message": "No data"}
     with pytest.raises(AssertionError):
         TwelveDataHistory(session=session, request_interval=0).history(
-            "USD_JPY", pd.Timestamp("2015-01-01", tz="UTC"), pd.Timestamp("2015-02-01", tz="UTC")
+            "USD_JPY", "H1", pd.Timestamp("2015-01-01", tz="UTC"), pd.Timestamp("2015-02-01", tz="UTC")
         )
+
+
+def test_daily_history_drops_weekend_bars():
+    session = MagicMock()
+    # 2026-10-30 金, 10-31 土, 11-01 日, 11-02 月
+    days = ["2026-10-30", "2026-10-31", "2026-11-01", "2026-11-02"]
+    values = [{"datetime": d, "open": "1", "high": "1", "low": "1", "close": "1"} for d in days]
+    session.get.return_value.json.return_value = {"status": "ok", "values": values}
+    df = TwelveDataHistory(session=session, request_interval=0).history(
+        "USD_JPY", "D", pd.Timestamp("2026-10-01", tz="UTC"), pd.Timestamp("2026-11-03", tz="UTC")
+    )
+    assert session.get.call_args.kwargs["params"]["interval"] == "1day"
+    assert df.index.strftime("%Y-%m-%d").tolist() == ["2026-10-30", "2026-11-02"]

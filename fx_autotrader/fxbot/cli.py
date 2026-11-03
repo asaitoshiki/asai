@@ -42,8 +42,8 @@ def cmd_fetch(args: argparse.Namespace) -> None:
 
 def cmd_fetch_history(args: argparse.Namespace) -> None:
     df = TwelveDataHistory().history(
-        args.instrument, pd.Timestamp(args.start, tz="UTC"), pd.Timestamp(args.end, tz="UTC")
-    )
+        args.instrument, args.granularity, pd.Timestamp(args.start, tz="UTC"), pd.Timestamp(args.end, tz="UTC")
+    ).assign(spread=args.spread)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.out)
     print(f"{len(df)} 本を {args.out} に保存しました")
@@ -151,7 +151,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     fh = sub.add_parser("fetch-history", help="長期の1時間足を Twelve Data から取得（APIキーは環境のネットワーク設定で付与）")
     fh.add_argument("--instrument", default="USD_JPY")
-    # Twelve Data の USD/JPY 1時間足は 2020-01-29 から。GMOコインのデータが始まるところまで取れば十分
+    fh.add_argument("--granularity", default="H1", choices=["H1", "D"])
+    fh.add_argument(
+        "--spread", type=float, default=0.005, help="取得期間に仮定するスプレッド（既定はGMOコインUSD/JPYの現在の0.5銭）"
+    )
+    # Twelve Data の USD/JPY は1時間足が 2020-01-29 から、日足が 1988-03-03 から
     fh.add_argument("--start", default="2020-01-29")
     fh.add_argument("--end", default="2023-10-30")
     fh.add_argument("--out", type=Path, default=Path("data/USD_JPY_H1_twelvedata.csv"))
