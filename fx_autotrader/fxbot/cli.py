@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from fxbot import backtest, data, model, tune
+from fxbot import backtest, data, model, trend_signal, tune
 from fxbot.config import BARS_PER_YEAR, load_gmo_settings, load_oanda_settings
 from fxbot.gmo import GmoClient, GmoMarketData
 from fxbot.live import Trader, run_forever
@@ -53,6 +53,12 @@ def cmd_combine(args: argparse.Namespace) -> None:
     df = data.combine(load_csv(args.history), load_csv(args.recent), args.spread_days)
     df.to_csv(args.out)
     print(f"{df.index[0]} 〜 {df.index[-1]} の {len(df)} 本を {args.out} に保存しました")
+
+
+def cmd_signal(args: argparse.Namespace) -> None:
+    for key in args.index:
+        name, series = trend_signal.INDEXES[key]
+        print(trend_signal.message(name, trend_signal.trend_state(trend_signal.fetch_fred(series))))
 
 
 def cmd_backtest(args: argparse.Namespace) -> None:
@@ -169,6 +175,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     cb.add_argument("--out", type=Path, default=Path("data/USD_JPY_H1_combined.csv"))
     cb.set_defaults(func=cmd_combine)
+
+    sg = sub.add_parser("signal", help="株価指数が200日平均より上か（2倍ETFを持つか退避するか）を判定")
+    sg.add_argument("--index", nargs="+", default=list(trend_signal.INDEXES), choices=list(trend_signal.INDEXES))
+    sg.set_defaults(func=cmd_signal)
 
     bt = sub.add_parser("backtest", parents=[common, evaluation], help="ウォークフォワードでバックテスト")
     # 既定値は tune で検証期間から選び、最終確認期間・再学習間隔・開始日の違いでも成績が崩れなかった設定
